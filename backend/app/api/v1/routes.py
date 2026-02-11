@@ -82,11 +82,7 @@ async def analyze_content(
         storage_path = f"{batch_id}/{file.filename}"
         storage_service.save(storage_path, content)
 
-        from io import BytesIO
-
-        file_obj = BytesIO(content)
-        file_obj.name = file.filename
-        text_content = await extract_text_from_file(file_obj)
+        text_content = await extract_text_from_file(content, file.filename)
 
         doc = Document(
             batch_id=batch_id,
