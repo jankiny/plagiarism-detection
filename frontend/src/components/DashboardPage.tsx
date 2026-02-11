@@ -18,7 +18,7 @@ const DashboardPage = () => {
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
 
-                if (!response.ok) throw new Error('Failed to fetch');
+                if (!response.ok) throw new Error('获取数据失败');
                 const data = await response.json();
                 setMetrics(data.data);
             } catch (e: any) {
@@ -35,43 +35,43 @@ const DashboardPage = () => {
         <div className="container fade-in" style={{ padding: '60px 0' }}>
             <div style={{ marginBottom: '60px' }}>
                 <h1 style={{ fontSize: '48px', fontWeight: 800, marginBottom: '12px', letterSpacing: '-0.02em' }}>
-                    Welcome Back
+                    欢迎回来
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>
-                    Here's an overview of your analysis activity.
+                    以下是您的分析活动概览。
                 </p>
             </div>
 
             {error && (
                 <div className="glass" style={{ padding: '20px', background: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.2)', borderRadius: '16px', marginBottom: '40px' }}>
-                    <p style={{ color: 'var(--error)', fontWeight: 500 }}>⚠️ Error: {error}</p>
+                    <p style={{ color: 'var(--error)', fontWeight: 500 }}>⚠️ 错误: {error}</p>
                 </div>
             )}
 
             <div style={{ display: 'flex', gap: '16px', marginBottom: '40px' }}>
                 <button
                     onClick={() => {
-                        alert("Please go to a specific batch to export results.");
+                        alert("请前往具体批次页面导出结果。");
                     }}
                     className="btn-secondary"
                     style={{ padding: '12px 24px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                    <span>📄</span> Export PDF Report
+                    <span>📄</span> 导出PDF报告
                 </button>
                 <button
-                    onClick={() => alert("Please go to a specific batch to export results.")}
+                    onClick={() => alert("请前往具体批次页面导出结果。")}
                     className="btn-secondary"
                     style={{ padding: '12px 24px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
                 >
-                    <span>📊</span> Export CSV Data
+                    <span>📊</span> 导出CSV数据
                 </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px', marginBottom: '60px' }}>
                 {[
-                    { label: 'Total Batches', value: metrics?.num_batches || 0, icon: '📦', color: 'var(--primary)' },
-                    { label: 'Documents Analyzed', value: metrics?.num_documents || 0, icon: '📄', color: 'var(--secondary)' },
-                    { label: 'Avg. per Batch', value: avg, icon: '📊', color: 'var(--accent)' }
+                    { label: '总批次数', value: metrics?.num_batches || 0, icon: '📦', color: 'var(--primary)' },
+                    { label: '已分析文档', value: metrics?.num_documents || 0, icon: '📄', color: 'var(--secondary)' },
+                    { label: '平均每批', value: avg, icon: '📊', color: 'var(--accent)' }
                 ].map((stat, i) => (
                     <div key={i} className="glass card-hover" style={{ padding: '32px', position: 'relative', overflow: 'hidden' }}>
                         <div style={{
@@ -98,8 +98,8 @@ const DashboardPage = () => {
                         📤
                     </div>
                     <div>
-                        <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>Upload Documents</h3>
-                        <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>Check for plagiarism & AI content</p>
+                        <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>上传文档</h3>
+                        <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>检测抄袭与AI生成内容</p>
                     </div>
                 </Link>
 
@@ -108,8 +108,8 @@ const DashboardPage = () => {
                         🤖
                     </div>
                     <div>
-                        <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>AI Detection</h3>
-                        <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>Analyze text for AI authorship</p>
+                        <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>AI检测</h3>
+                        <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>分析文本是否由AI生成</p>
                     </div>
                 </Link>
             </div>

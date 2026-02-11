@@ -21,7 +21,7 @@ const ForgotPasswordPage: React.FC = () => {
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.detail || 'Failed to send reset email');
+                throw new Error(data.detail || '发送重置邮件失败');
             }
 
             setSuccess(true);
@@ -29,7 +29,7 @@ const ForgotPasswordPage: React.FC = () => {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unexpected error occurred');
+                setError('发生意外错误');
             }
         }
     };
@@ -38,9 +38,9 @@ const ForgotPasswordPage: React.FC = () => {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="w-full max-w-md p-8 space-y-8 bg-surface rounded-lg shadow-lg text-center">
-                    <h2 className="text-3xl font-bold text-text-primary">Password Reset Email Sent</h2>
+                    <h2 className="text-3xl font-bold text-text-primary">密码重置邮件已发送</h2>
                     <p className="text-text-secondary">
-                        Please check your inbox for instructions on how to reset your password.
+                        请查看您的收件箱，按照说明重置密码。
                     </p>
                 </div>
             </div>
@@ -50,14 +50,14 @@ const ForgotPasswordPage: React.FC = () => {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="w-full max-w-md p-8 space-y-8 bg-color-surface rounded-lg shadow-lg">
-                <h2 className="text-3xl font-bold text-center text-color-text-primary">Forgot Your Password?</h2>
+                <h2 className="text-3xl font-bold text-center text-color-text-primary">忘记密码？</h2>
                 <p className="text-center text-color-text-secondary">
-                    Enter your email address and we'll send you a link to reset your password.
+                    输入您的邮箱地址，我们将发送重置密码链接。
                 </p>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-color-text-secondary">
-                            Email address
+                            邮箱地址
                         </label>
                         <div className="mt-1">
                             <input
@@ -78,7 +78,7 @@ const ForgotPasswordPage: React.FC = () => {
                             type="submit"
                             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-color-primary hover:bg-color-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-color-primary"
                         >
-                            Send reset link
+                            发送重置链接
                         </button>
                     </div>
                 </form>
@@ -89,7 +89,7 @@ const ForgotPasswordPage: React.FC = () => {
                 )}
                  <div className="text-sm text-center">
                     <Link to="/login" className="font-medium text-color-primary hover:underline">
-                        Back to login
+                        返回登录
                     </Link>
                 </div>
             </div>

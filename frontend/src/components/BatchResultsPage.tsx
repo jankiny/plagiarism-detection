@@ -16,7 +16,7 @@ const BatchResultsPage = () => {
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
 
-                if (!response.ok) throw new Error('Failed to fetch results');
+                if (!response.ok) throw new Error('获取结果失败');
                 const data = await response.json();
                 setResults(data.data);
             } catch (e: any) {
@@ -34,11 +34,11 @@ const BatchResultsPage = () => {
     return (
         <div className="container" style={{ padding: '40px 0' }}>
             <h1 style={{ fontSize: '36px', fontWeight: 700, marginBottom: '24px' }}>
-                Analysis Results for Batch <span className="text-gradient-primary">{batchId}</span>
+                批次 <span className="text-gradient-primary">{batchId}</span> 的分析结果
             </h1>
 
-            {isLoading && <p>Loading results...</p>}
-            {error && <p style={{ color: 'var(--error)' }}>Error: {error}</p>}
+            {isLoading && <p>正在加载结果...</p>}
+            {error && <p style={{ color: 'var(--error)' }}>错误: {error}</p>}
 
             <div className="glass" style={{ padding: '32px' }}>
                 {results.length > 0 ? (
@@ -49,13 +49,13 @@ const BatchResultsPage = () => {
                                     {result.document_name}
                                 </h3>
                                 <p style={{ color: 'var(--text-secondary)' }}>
-                                    Similarity: {(result.similarity * 100).toFixed(1)}% compared to {result.similar_document_name}
+                                    相似度: {(result.similarity * 100).toFixed(1)}%，与 {result.similar_document_name} 对比
                                 </p>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p>No results found for this batch.</p>
+                    <p>该批次暂无结果。</p>
                 )}
             </div>
         </div>

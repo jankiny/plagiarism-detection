@@ -77,7 +77,7 @@ async def admin_user(user: User = Depends(current_user)):
     if user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Admin privileges required."
+            detail="访问被拒绝，需要管理员权限。"
         )
     return user
 
@@ -87,6 +87,6 @@ async def mod_or_admin_user(user: User = Depends(current_user)):
     if user.role not in ["admin", "moderator"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Admin or moderator privileges required."
+            detail="访问被拒绝，需要管理员或版主权限。"
         )
     return user

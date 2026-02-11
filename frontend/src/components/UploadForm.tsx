@@ -47,7 +47,7 @@ const UploadForm = () => {
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.detail || 'Upload failed');
+                throw new Error(data.detail || '上传失败');
             }
 
             const data = await response.json();
@@ -64,10 +64,10 @@ const UploadForm = () => {
         <div className="container fade-in" style={{ padding: '60px 0' }}>
             <div style={{ marginBottom: '60px', textAlign: 'center' }}>
                 <h1 className="text-gradient" style={{ fontSize: '56px', fontWeight: 800, marginBottom: '16px', letterSpacing: '-0.02em' }}>
-                    Analyze Content
+                    内容分析
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>
-                    Upload documents, images, or archives for deep analysis.
+                    上传文档、图片或压缩包进行深度分析。
                 </p>
             </div>
 
@@ -77,13 +77,13 @@ const UploadForm = () => {
                     {/* Provider Selection */}
                     <div>
                         <label style={{ display: 'block', marginBottom: '20px', fontSize: '16px', fontWeight: 700, color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                            AI Detection Provider
+                            AI检测服务商
                         </label>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                             {[
-                                { id: 'local', label: 'Local Model', desc: 'Free, Fast, Private' },
-                                { id: 'openai', label: 'OpenAI', desc: 'High Accuracy, Paid' },
-                                { id: 'together', label: 'Together AI', desc: 'Open Models, Fast' }
+                                { id: 'local', label: '本地模型', desc: '免费、快速、私密' },
+                                { id: 'openai', label: 'OpenAI', desc: '高精度、付费' },
+                                { id: 'together', label: 'Together AI', desc: '开源模型、快速' }
                             ].map(p => (
                                 <label key={p.id} style={{ cursor: 'pointer' }}>
                                     <input
@@ -109,7 +109,7 @@ const UploadForm = () => {
                         </div>
                         {provider !== 'local' && (
                             <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                ⚠️ External providers may incur costs and send data to third parties.
+                                ⚠️ 外部服务商可能产生费用，且数据会发送至第三方。
                             </div>
                         )}
                     </div>
@@ -117,13 +117,13 @@ const UploadForm = () => {
                     {/* Analysis Type */}
                     <div>
                         <label style={{ display: 'block', marginBottom: '20px', fontSize: '16px', fontWeight: 700, color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                            Analysis Mode
+                            分析模式
                         </label>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
                             {[
-                                { id: 'plagiarism', label: 'Plagiarism', icon: '🔍' },
-                                { id: 'ai', label: 'AI Detection', icon: '🤖' },
-                                { id: 'both', label: 'Full Scan', icon: '✨' }
+                                { id: 'plagiarism', label: '查重检测', icon: '🔍' },
+                                { id: 'ai', label: 'AI检测', icon: '🤖' },
+                                { id: 'both', label: '全面扫描', icon: '✨' }
                             ].map(type => (
                                 <label key={type.id} style={{ cursor: 'pointer' }}>
                                     <input
@@ -152,7 +152,7 @@ const UploadForm = () => {
                     {(analysisType === 'ai' || analysisType === 'both') && (
                         <div>
                             <label style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                <span>AI Detection Sensitivity</span>
+                                <span>AI检测灵敏度</span>
                                 <span>{Math.round(aiThreshold * 100)}%</span>
                             </label>
                             <input
@@ -165,8 +165,8 @@ const UploadForm = () => {
                                 style={{ width: '100%', accentColor: 'var(--primary)' }}
                             />
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                                <span>More Lenient</span>
-                                <span>Stricter</span>
+                                <span>更宽松</span>
+                                <span>更严格</span>
                             </div>
                         </div>
                     )}
@@ -174,7 +174,7 @@ const UploadForm = () => {
                     {/* Upload Area */}
                     <div>
                         <label style={{ display: 'block', marginBottom: '20px', fontSize: '16px', fontWeight: 700, color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                            Documents
+                            文档
                         </label>
                         <label className="glass upload-zone" style={{
                             display: 'block',
@@ -187,10 +187,10 @@ const UploadForm = () => {
                         }}>
                             <div style={{ fontSize: '64px', marginBottom: '24px' }}>📤</div>
                             <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '12px' }}>
-                                <span className="text-gradient-primary">Select files</span> or drag & drop
+                                <span className="text-gradient-primary">选择文件</span>或拖拽上传
                             </h3>
                             <p style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
-                                Supports PDF, DOCX, TXT, PNG, JPG, ZIP, TAR
+                                支持 PDF、DOCX、TXT、PNG、JPG、ZIP、TAR
                             </p>
                             <input
                                 type="file"
@@ -206,10 +206,10 @@ const UploadForm = () => {
                         <div className="fade-in">
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
                                 <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                    Selected Files ({files.length})
+                                    已选文件 ({files.length})
                                 </p>
                                 <button type="button" onClick={() => setFiles([])} style={{ fontSize: '13px', color: 'var(--error)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-                                    Clear All
+                                    清除全部
                                 </button>
                             </div>
                             <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'grid', gap: '12px', paddingRight: '8px' }}>
@@ -244,9 +244,9 @@ const UploadForm = () => {
                         {isUploading ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div className="spinner" style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }} />
-                                Processing...
+                                处理中...
                             </div>
-                        ) : 'Start Deep Analysis'}
+                        ) : '开始深度分析'}
                     </button>
                 </form>
 
@@ -254,10 +254,10 @@ const UploadForm = () => {
                     <div className="fade-in" style={{ marginTop: '40px', padding: '32px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '24px', textAlign: 'center' }}>
                         <div style={{ fontSize: '32px', marginBottom: '16px' }}>✅</div>
                         <p style={{ fontSize: '18px', marginBottom: '24px', color: 'var(--success)', fontWeight: 700 }}>
-                            Upload successful! Analysis in progress.
+                            上传成功！正在分析中。
                         </p>
                         <Link to={`/dashboard`} className="btn-secondary" style={{ display: 'inline-flex', padding: '14px 32px', borderRadius: '14px', textDecoration: 'none', fontWeight: 700 }}>
-                            Go to Dashboard →
+                            进入控制台 →
                         </Link>
                     </div>
                 )}

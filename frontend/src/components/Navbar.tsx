@@ -32,18 +32,18 @@ const Navbar = () => {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>Dashboard</Link>
-              <Link to="/upload" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>Upload</Link>
-              <Link to="/ai-check" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>AI Check</Link>
+              <Link to="/dashboard" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>控制台</Link>
+              <Link to="/upload" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>上传</Link>
+              <Link to="/ai-check" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>AI检测</Link>
               {user && user.role === 'admin' && (
-                <Link to="/admin" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>Admin</Link>
+                <Link to="/admin" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>管理</Link>
               )}
-              <button className="btn-secondary" style={{ padding: '10px 20px', fontSize: '14px', color: 'var(--error)' }} onClick={() => { logout(); window.location.href = '/'; }}>Logout</button>
+              <button className="btn-secondary" style={{ padding: '10px 20px', fontSize: '14px', color: 'var(--error)' }} onClick={() => { logout(); window.location.href = '/'; }}>退出</button>
             </>
           ) : (
             <>
-              <Link to="/login" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>Login</Link>
-              <Link to="/register" className="btn-primary" style={{ textDecoration: 'none', padding: '10px 24px', fontSize: '14px' }}>Get Started</Link>
+              <Link to="/login" className="btn-secondary" style={{ textDecoration: 'none', padding: '10px 20px', fontSize: '14px' }}>登录</Link>
+              <Link to="/register" className="btn-primary" style={{ textDecoration: 'none', padding: '10px 24px', fontSize: '14px' }}>开始使用</Link>
             </>
           )}
         </div>

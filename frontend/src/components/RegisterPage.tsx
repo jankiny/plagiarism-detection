@@ -13,7 +13,7 @@ const RegisterPage = () => {
         setError(null);
 
         if (password !== confirmPassword) {
-            setError("Passwords don't match");
+            setError("两次输入的密码不一致");
             return;
         }
 
@@ -24,7 +24,7 @@ const RegisterPage = () => {
                 body: JSON.stringify({ email, password }),
             });
 
-            if (!response.ok) throw new Error('Registration failed');
+            if (!response.ok) throw new Error('注册失败');
             setSuccess(true);
         } catch (err: any) {
             setError(err.message);
@@ -36,12 +36,12 @@ const RegisterPage = () => {
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
                 <div className="glass" style={{ maxWidth: '420px', width: '100%', padding: '40px', textAlign: 'center' }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>✅</div>
-                    <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>Account Created!</h2>
+                    <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>账号创建成功！</h2>
                     <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                        You can now sign in to your account
+                        现在可以登录您的账号了
                     </p>
                     <Link to="/login" className="btn-primary" style={{ textDecoration: 'none', display: 'inline-flex' }}>
-                        Go to Login
+                        去登录
                     </Link>
                 </div>
             </div>
@@ -53,15 +53,15 @@ const RegisterPage = () => {
             <div className="glass" style={{ maxWidth: '420px', width: '100%', padding: '40px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                     <div style={{ fontSize: '48px', marginBottom: '16px' }}>👤</div>
-                    <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>Create Account</h2>
+                    <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>创建账号</h2>
                     <p style={{ color: 'var(--text-secondary)' }}>
-                        Already have an account? <Link to="/login" style={{ color: 'var(--primary)' }}>Sign in</Link>
+                        已有账号？ <Link to="/login" style={{ color: 'var(--primary)' }}>登录</Link>
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>Email</label>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>邮箱</label>
                         <input
                             type="email"
                             required
@@ -72,7 +72,7 @@ const RegisterPage = () => {
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>Password</label>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>密码</label>
                         <input
                             type="password"
                             required
@@ -83,7 +83,7 @@ const RegisterPage = () => {
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>Confirm Password</label>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>确认密码</label>
                         <input
                             type="password"
                             required
@@ -100,7 +100,7 @@ const RegisterPage = () => {
                     )}
 
                     <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                        Create Account
+                        创建账号
                     </button>
                 </form>
             </div>

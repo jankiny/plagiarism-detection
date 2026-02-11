@@ -44,10 +44,10 @@ async def analyze_content(
         parsed_options = json.loads(options)
         opts = AnalysisOptions(**parsed_options)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid options JSON: {e}")
+        raise HTTPException(status_code=400, detail=f"无效的选项JSON: {e}")
 
     if not files and not text:
-        raise HTTPException(status_code=400, detail="Must provide either files or text")
+        raise HTTPException(status_code=400, detail="必须提供文件或文本")
 
     # Create Batch
     from app.models import Batch, Document
@@ -115,7 +115,7 @@ async def analyze_content(
     return AnalysisResponse(
         batch_id=str(batch_id),
         status="queued",
-        message="Analysis started successfully"
+        message="分析已成功启动"
     )
 
 @router.get("/ai-detection/health")
@@ -154,7 +154,7 @@ async def detect_ai_only(
             "details": ai_result["details"]
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI detection failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI检测失败: {str(e)}")
 
 @router.get("/batches/{batch_id}/results")
 async def get_batch_results(
@@ -171,7 +171,7 @@ async def get_batch_results(
 
     batch = db.query(Batch).filter(Batch.id == batch_id, Batch.user_id == user.id).first()
     if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
+        raise HTTPException(status_code=404, detail="未找到该批次")
 
     documents = db.query(Document).filter(Document.batch_id == batch_id).all()
     

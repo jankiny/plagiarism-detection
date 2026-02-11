@@ -41,13 +41,13 @@ const ResultsPage: React.FC = () => {
 
                 if (!response.ok) {
                     const data = await response.json();
-                    throw new Error(data.detail || 'Failed to fetch results');
+                    throw new Error(data.detail || '获取结果失败');
                 }
 
                 const data = await response.json();
                 setResults(data.data);
             } catch (e: any) {
-                setError(e.message || 'An unexpected error occurred');
+                setError(e.message || '发生意外错误');
             } finally {
                 setLoading(false);
             }
@@ -60,7 +60,7 @@ const ResultsPage: React.FC = () => {
         return (
             <div className="fade-in" style={{ padding: '100px 0', textAlign: 'center' }}>
                 <div className="spinner" style={{ width: '60px', height: '60px', border: '4px solid rgba(99, 102, 241, 0.1)', borderTopColor: 'var(--primary)', borderRadius: '50%', margin: '0 auto 24px' }} />
-                <h2 style={{ fontSize: '24px', fontWeight: 700 }}>Analyzing results...</h2>
+                <h2 style={{ fontSize: '24px', fontWeight: 700 }}>正在分析结果...</h2>
             </div>
         );
     }
@@ -69,7 +69,7 @@ const ResultsPage: React.FC = () => {
         return (
             <div className="fade-in" style={{ padding: '60px 0', maxWidth: '600px', margin: '0 auto' }}>
                 <div className="glass" style={{ padding: '40px', textAlign: 'center', border: '1px solid var(--error)' }}>
-                    <h2 style={{ color: 'var(--error)' }}>Analysis Failed</h2>
+                    <h2 style={{ color: 'var(--error)' }}>分析失败</h2>
                     <p>{error}</p>
                 </div>
             </div>
@@ -79,8 +79,8 @@ const ResultsPage: React.FC = () => {
     return (
         <div className="fade-in" style={{ padding: '60px 0', maxWidth: '1000px', margin: '0 auto' }}>
             <div style={{ marginBottom: '40px' }}>
-                <h1 className="text-gradient" style={{ fontSize: '48px', fontWeight: 800 }}>Analysis Report</h1>
-                <p style={{ color: 'var(--text-secondary)' }}>Batch ID: {batchId}</p>
+                <h1 className="text-gradient" style={{ fontSize: '48px', fontWeight: 800 }}>分析报告</h1>
+                <p style={{ color: 'var(--text-secondary)' }}>批次ID: {batchId}</p>
             </div>
 
             <div style={{ display: 'grid', gap: '32px' }}>
@@ -103,7 +103,7 @@ const ResultsPage: React.FC = () => {
                             {/* AI Score */}
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '16px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <span style={{ fontWeight: 600 }}>AI Probability</span>
+                                    <span style={{ fontWeight: 600 }}>AI概率</span>
                                     <span style={{ fontWeight: 700, color: doc.ai_analysis.is_ai ? 'var(--error)' : 'var(--success)' }}>
                                         {(doc.ai_analysis.score * 100).toFixed(1)}%
                                     </span>
@@ -117,14 +117,14 @@ const ResultsPage: React.FC = () => {
                                     }} />
                                 </div>
                                 <p style={{ fontSize: '13px', marginTop: '8px', color: 'var(--text-muted)' }}>
-                                    {doc.ai_analysis.is_ai ? 'Likely AI-Generated' : 'Likely Human-Written'}
+                                    {doc.ai_analysis.is_ai ? '可能是AI生成' : '可能是人工撰写'}
                                 </p>
                             </div>
 
                             {/* Plagiarism Score */}
                             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '16px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <span style={{ fontWeight: 600 }}>Max Plagiarism</span>
+                                    <span style={{ fontWeight: 600 }}>最高相似度</span>
                                     <span style={{ fontWeight: 700 }}>
                                         {doc.plagiarism_analysis.length > 0
                                             ? `${(Math.max(...doc.plagiarism_analysis.map(p => p.similarity)) * 100).toFixed(1)}%`
@@ -140,7 +140,7 @@ const ResultsPage: React.FC = () => {
                                     }} />
                                 </div>
                                 <p style={{ fontSize: '13px', marginTop: '8px', color: 'var(--text-muted)' }}>
-                                    {doc.plagiarism_analysis.length} document matches found
+                                    {doc.plagiarism_analysis.length} 个文档匹配
                                 </p>
                             </div>
                         </div>
@@ -153,7 +153,7 @@ const ResultsPage: React.FC = () => {
                                     className="btn-secondary"
                                     style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}
                                 >
-                                    <span>View Plagiarism Details</span>
+                                    <span>查看查重详情</span>
                                     <span>{expandedDoc === doc.document_id ? '▲' : '▼'}</span>
                                 </button>
 
@@ -162,7 +162,7 @@ const ResultsPage: React.FC = () => {
                                         {doc.plagiarism_analysis.map((match, idx) => (
                                             <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                                    <span style={{ fontWeight: 600, color: 'var(--warning)' }}>Match with: {match.similar_document}</span>
+                                                    <span style={{ fontWeight: 600, color: 'var(--warning)' }}>匹配文档: {match.similar_document}</span>
                                                     <span style={{ fontWeight: 700 }}>{(match.similarity * 100).toFixed(1)}%</span>
                                                 </div>
                                                 {match.matches && match.matches.length > 0 ? (
@@ -170,12 +170,12 @@ const ResultsPage: React.FC = () => {
                                                         {match.matches.map((chunk, cIdx) => (
                                                             <div key={cIdx} style={{ fontSize: '13px', background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '8px' }}>
                                                                 <div style={{ color: 'var(--error)', marginBottom: '4px' }}>"{chunk.source_chunk.substring(0, 100)}..."</div>
-                                                                <div style={{ color: 'var(--text-muted)' }}>Matches: "{chunk.target_chunk.substring(0, 100)}..."</div>
+                                                                <div style={{ color: 'var(--text-muted)' }}>匹配: "{chunk.target_chunk.substring(0, 100)}..."</div>
                                                             </div>
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>High semantic similarity detected across document.</p>
+                                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>检测到高语义相似度。</p>
                                                 )}
                                             </div>
                                         ))}

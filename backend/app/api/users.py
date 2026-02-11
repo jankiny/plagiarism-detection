@@ -24,7 +24,7 @@ async def get_user_by_id(
     """Get user by ID (admin or self only)"""
     # Check if current user is admin or requesting own profile
     if current_user.id != user_id and current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise HTTPException(status_code=403, detail="无权访问")
     
     # Fetch the actual user from database
     from sqlalchemy import select
@@ -32,7 +32,7 @@ async def get_user_by_id(
     user = result.scalar_one_or_none()
     
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="未找到用户")
     
     return user
 

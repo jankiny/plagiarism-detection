@@ -43,7 +43,7 @@ async def create_user(
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this email already exists"
+            detail="该邮箱已被注册"
         )
     
     # Create user using FastAPI-Users manager
@@ -77,7 +77,7 @@ async def update_user_role(
     if role not in ["user", "moderator", "admin"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid role. Valid roles: user, moderator, admin"
+            detail="无效角色。有效角色: user, moderator, admin"
         )
     
     # Get the user to update
@@ -87,14 +87,14 @@ async def update_user_role(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            detail="未找到用户"
         )
-    
+
     # Prevent demoting oneself
     if user.id == current_user.id and role != "admin":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Admin cannot change their own role"
+            detail="管理员不能更改自己的角色"
         )
     
     # Update user role
@@ -130,14 +130,14 @@ async def delete_user(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            detail="未找到用户"
         )
-    
+
     # Prevent deleting oneself
     if user.id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Admin cannot delete themselves"
+            detail="管理员不能删除自己"
         )
     
     # Soft delete by deactivating
@@ -148,7 +148,7 @@ async def delete_user(
     )
     await db.commit()
     
-    return {"message": f"User {user.email} deactivated successfully"}
+    return {"message": f"用户 {user.email} 已停用"}
 
 
 @router.get("/stats", response_model=dict)

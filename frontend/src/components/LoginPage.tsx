@@ -22,7 +22,7 @@ const LoginPage = () => {
                 body: new URLSearchParams({ username: email, password }),
             });
 
-            if (!response.ok) throw new Error('Login failed');
+            if (!response.ok) throw new Error('登录失败');
 
             const data = await response.json();
             login(data.access_token);
@@ -39,15 +39,15 @@ const LoginPage = () => {
             <div className="glass" style={{ maxWidth: '420px', width: '100%', padding: '40px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                     <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
-                    <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>Welcome Back</h2>
+                    <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>欢迎回来</h2>
                     <p style={{ color: 'var(--text-secondary)' }}>
-                        Don't have an account? <Link to="/register" style={{ color: 'var(--primary)' }}>Sign up</Link>
+                        还没有账号？ <Link to="/register" style={{ color: 'var(--primary)' }}>注册</Link>
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>Email</label>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>邮箱</label>
                         <input
                             type="email"
                             required
@@ -58,7 +58,7 @@ const LoginPage = () => {
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>Password</label>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>密码</label>
                         <input
                             type="password"
                             required
@@ -75,7 +75,7 @@ const LoginPage = () => {
                     )}
 
                     <button type="submit" className="btn-primary" disabled={isLoading} style={{ width: '100%', justifyContent: 'center' }}>
-                        {isLoading ? 'Signing in...' : 'Sign In'}
+                        {isLoading ? '登录中...' : '登录'}
                     </button>
                 </form>
             </div>

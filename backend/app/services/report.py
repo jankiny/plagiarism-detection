@@ -18,7 +18,7 @@ class ReportService:
         writer = csv.writer(output)
         
         # Header
-        writer.writerow(['Filename', 'Status', 'AI Score', 'Is AI?', 'Plagiarism Score'])
+        writer.writerow(['文件名', '状态', 'AI分数', '是否AI?', '查重分数'])
         
         # Data
         for doc in documents:
@@ -26,7 +26,7 @@ class ReportService:
                 doc.filename,
                 doc.status,
                 f"{doc.ai_score:.2f}" if doc.ai_score is not None else "N/A",
-                "Yes" if doc.is_ai_generated else "No",
+                "是" if doc.is_ai_generated else "否",
                 f"{self._calculate_plagiarism_score(doc, documents):.2f}"
             ])
             
@@ -62,20 +62,20 @@ class ReportService:
 
         # Title
         title_style = styles['Title']
-        story.append(Paragraph(f"Analysis Report - Batch {batch.id}", title_style))
+        story.append(Paragraph(f"分析报告 - 批次 {batch.id}", title_style))
         story.append(Spacer(1, 12))
 
         # Summary
-        story.append(Paragraph(f"Total Documents: {len(documents)}", styles['Normal']))
+        story.append(Paragraph(f"文档总数: {len(documents)}", styles['Normal']))
         story.append(Spacer(1, 24))
 
         # Table Data
-        data = [['Filename', 'AI Score', 'Verdict']]
+        data = [['文件名', 'AI分数', '判定结果']]
         for doc_item in documents:
             score = f"{doc_item.ai_score:.1%}" if doc_item.ai_score is not None else "N/A"
-            verdict = "AI-Generated" if doc_item.is_ai_generated else "Human-Written"
+            verdict = "AI生成" if doc_item.is_ai_generated else "人工撰写"
             if doc_item.ai_score is None:
-                verdict = "Pending/Error"
+                verdict = "待处理/错误"
             
             data.append([doc_item.filename, score, verdict])
 
