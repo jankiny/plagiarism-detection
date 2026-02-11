@@ -48,9 +48,13 @@ async def create_user(
     
     # Create user using FastAPI-Users manager
     try:
-        user_db = fastapi_users.get_user_db(db)
-        user_manager = fastapi_users.get_user_manager(user_db)
-        
+        from app.api.auth import UserManager, get_user_db
+        from fastapi_users.db import SQLAlchemyUserDatabase
+
+        # Manually initialize user manager
+        user_db_obj = SQLAlchemyUserDatabase(db, User)
+        user_manager = UserManager(user_db_obj)
+
         user = await user_manager.create(user_create)
         return {
             "id": str(user.id),
