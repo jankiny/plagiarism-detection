@@ -27,15 +27,10 @@ app.add_middleware(
 )
 from app.api.v1 import routes as v1_routes
 
-# fastapi-users 认证路由
+# fastapi-users 认证路由（仅登录，禁用用户自行注册）
 app.include_router(
     fastapi_users.get_auth_router(auth_backend),
     prefix="/api/v1/auth/jwt",
-    tags=["auth"],
-)
-app.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
-    prefix="/api/v1/auth",
     tags=["auth"],
 )
 app.include_router(
