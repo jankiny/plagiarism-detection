@@ -8,6 +8,9 @@ ENV PYTHONUNBUFFERED 1
 # Set work directory
 WORKDIR /app
 
+# Configure apt mirror (USTC)
+RUN sed -i 's|deb.debian.org|mirrors.ustc.edu.cn|g' /etc/apt/sources.list.d/debian.sources
+
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
