@@ -5,45 +5,28 @@ const LandingPage = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="container fade-in" style={{ padding: '80px 0' }}>
-      {/* Hero Section */}
-      <div style={{ textAlign: 'center', marginBottom: '100px', position: 'relative' }}>
-        <div style={{
-          display: 'inline-block',
-          padding: '10px 24px',
-          background: 'rgba(99, 102, 241, 0.1)',
-          border: '1px solid rgba(99, 102, 241, 0.2)',
-          borderRadius: '100px',
-          marginBottom: '32px',
-          fontSize: '14px',
-          fontWeight: 600,
-          color: 'var(--primary)',
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase'
-        }}>
-          ✨ 新一代检测引擎
-        </div>
-
-        <h1 style={{ fontSize: '72px', fontWeight: 800, marginBottom: '28px', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
-          守护学术诚信<br />
-          <span className="text-gradient-primary">智能AI检测</span>
+    <div className="container fade-in" style={{ padding: '60px 0' }}>
+      {/* Hero */}
+      <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+        <h1 style={{ fontSize: '48px', fontWeight: 800, marginBottom: '20px', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+          查重 & <span className="text-gradient-primary">AI检测</span> 平台
         </h1>
 
-        <p style={{ fontSize: '22px', color: 'var(--text-secondary)', marginBottom: '48px', maxWidth: '700px', margin: '0 auto 48px', fontWeight: 400 }}>
-          终极开源查重与AI生成内容检测方案。快速、安全、精准无比。
+        <p style={{ fontSize: '18px', color: 'var(--text-secondary)', marginBottom: '36px', maxWidth: '560px', margin: '0 auto 36px' }}>
+          支持文档查重与AI生成内容识别，快速、安全。
         </p>
 
-        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
           {isAuthenticated ? (
-            <Link to="/dashboard" className="btn-primary" style={{ textDecoration: 'none', padding: '16px 40px', fontSize: '18px' }}>
-              进入控制台 →
+            <Link to="/dashboard" className="btn-primary" style={{ textDecoration: 'none', padding: '14px 36px', fontSize: '16px' }}>
+              进入控制台
             </Link>
           ) : (
             <>
-              <Link to="/register" className="btn-primary" style={{ textDecoration: 'none', padding: '16px 40px', fontSize: '18px' }}>
-                免费开始使用
+              <Link to="/register" className="btn-primary" style={{ textDecoration: 'none', padding: '14px 36px', fontSize: '16px' }}>
+                注册
               </Link>
-              <Link to="/login" className="btn-secondary" style={{ textDecoration: 'none', padding: '16px 40px', fontSize: '18px' }}>
+              <Link to="/login" className="btn-secondary" style={{ textDecoration: 'none', padding: '14px 36px', fontSize: '16px' }}>
                 登录
               </Link>
             </>
@@ -51,21 +34,21 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Features Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', marginBottom: '100px' }}>
+      {/* Features */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '64px' }}>
         {[
-          { icon: '🔍', title: '语义分析', desc: '超越简单词汇匹配，深入理解文档的含义和上下文。', color: 'var(--primary)' },
-          { icon: '🤖', title: 'AI内容检测', desc: '高置信度识别由GPT-4、Claude等先进模型生成的文本。', color: 'var(--secondary)' },
-          { icon: '🖼️', title: '完整OCR支持', desc: '内置Tesseract引擎，轻松分析扫描PDF和图片。', color: 'var(--accent)' }
+          { icon: '🔍', title: '语义查重', desc: '基于语义向量分析文档相似度，超越简单词汇匹配。' },
+          { icon: '🤖', title: 'AI内容检测', desc: '识别由大语言模型生成的文本内容。' },
+          { icon: '🖼️', title: 'OCR支持', desc: '支持扫描PDF和图片的文字提取与分析。' }
         ].map((feature, i) => (
-          <div key={i} className="glass card-hover" style={{ padding: '40px', textAlign: 'left' }}>
+          <div key={i} className="glass card-hover" style={{ padding: '32px', textAlign: 'left' }}>
             <div style={{
-              fontSize: '48px',
-              marginBottom: '24px',
-              width: '80px',
-              height: '80px',
+              fontSize: '36px',
+              marginBottom: '16px',
+              width: '64px',
+              height: '64px',
               background: 'rgba(255,255,255,0.03)',
-              borderRadius: '20px',
+              borderRadius: '16px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -73,27 +56,15 @@ const LandingPage = () => {
             }}>
               {feature.icon}
             </div>
-            <h3 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>{feature.title}</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: 1.7 }}>{feature.desc}</p>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '10px' }}>{feature.title}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6 }}>{feature.desc}</p>
           </div>
         ))}
       </div>
 
-      {/* Stats Section */}
-      <div className="glass" style={{ padding: '60px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px' }}>
-          {[
-            { label: '准确率', value: '99.9%' },
-            { label: '处理时间', value: '< 2s' },
-            { label: '支持格式', value: '15+' },
-            { label: '开源', value: '100%' }
-          ].map((stat, i) => (
-            <div key={i}>
-              <div style={{ fontSize: '40px', fontWeight: 800, marginBottom: '8px', color: 'white' }}>{stat.value}</div>
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>{stat.label}</div>
-            </div>
-          ))}
-        </div>
+      {/* Footer */}
+      <div style={{ textAlign: 'center', padding: '24px 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+        © {new Date().getFullYear()} 三门科数 版权所有
       </div>
     </div>
   );

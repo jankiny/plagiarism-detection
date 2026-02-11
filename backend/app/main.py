@@ -1,4 +1,4 @@
-import loguru
+import logging
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,7 +36,7 @@ app.include_router(routes.router, prefix="/api/v1", tags=["legacy"]) # Keep lega
 
 @app.on_event("startup")
 async def startup_event():
-    loguru.logger.info("Starting up...")
+    logging.info("Starting up...")
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
@@ -45,11 +45,11 @@ async def startup_event():
         from app.core.database_seed import seed_database
         await seed_database()
     except Exception as e:
-        loguru.logger.error(f"Database seeding failed: {e}")
+        logging.error(f"Database seeding failed: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    loguru.logger.info("Shutting down...")
+    logging.info("Shutting down...")
 
 @app.get("/health")
 async def health_check():

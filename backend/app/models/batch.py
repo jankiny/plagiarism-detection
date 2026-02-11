@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Integer, DateTime, func, UUID, ForeignKey
+from sqlalchemy import Column, String, Integer, Float, DateTime, func, UUID, ForeignKey
 from .base import Base
 
 class Batch(Base):
