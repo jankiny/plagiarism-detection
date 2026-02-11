@@ -44,7 +44,7 @@ app.include_router(
     tags=["auth"],
 )
 
-app.include_router(users_router, prefix="/api/users", tags=["users"])
+app.include_router(users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(admin_router, prefix="/api", tags=["admin"])
 app.include_router(v1_routes.router, prefix="/api/v1", tags=["analysis"])
 
