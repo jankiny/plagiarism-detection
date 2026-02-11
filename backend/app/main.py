@@ -2,7 +2,7 @@ import logging
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import router as api_router
+from sqlalchemy import text
 from app.api.auth import router as auth_router
 from app.api.users import router as users_router
 from app.api.admin import router as admin_router
@@ -24,22 +24,23 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
-from app.api import routes, auth, users
 from app.api.v1 import routes as v1_routes
 
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth-v1"])
+app.include_router(users_router, prefix="/api/users", tags=["users"])
 app.include_router(admin_router, prefix="/api", tags=["admin"])
 app.include_router(v1_routes.router, prefix="/api/v1", tags=["analysis"])
-app.include_router(routes.router, prefix="/api/v1", tags=["legacy"]) # Keep legacy routes for now or deprecate
 
 
 @app.on_event("startup")
 async def startup_event():
     logging.info("Starting up...")
     async with async_engine.begin() as conn:
+        # 确保 pgvector 扩展已启用
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
-    
+
     # Seed the database with initial data
     try:
         from app.core.database_seed import seed_database

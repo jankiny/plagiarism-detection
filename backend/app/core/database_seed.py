@@ -3,7 +3,7 @@ import os
 import sys
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
+from sqlalchemy import select, text
 from app.core.config import settings
 from app.models.user import User
 from app.models.base import Base
@@ -43,9 +43,10 @@ async def seed_database():
     
     try:
         engine = create_async_engine(settings.DATABASE_URL)
-        
-        # Create tables
+
+        # 启用 pgvector 扩展并创建表
         async with engine.begin() as conn:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             await conn.run_sync(Base.metadata.create_all)
         
         # Create session
