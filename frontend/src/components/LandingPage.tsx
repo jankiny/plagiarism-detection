@@ -64,7 +64,7 @@ const LandingPage = () => {
 
       {/* Footer */}
       <div style={{ textAlign: 'center', padding: '24px 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-        © {new Date().getFullYear()} 三门科数 版权所有
+        © {new Date().getFullYear()} 三门公司
       </div>
     </div>
   );

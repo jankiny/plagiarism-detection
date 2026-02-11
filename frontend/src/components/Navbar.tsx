@@ -35,7 +35,7 @@ const Navbar = () => {
             <span style={{ fontSize: '18px' }}>🛡️</span>
           </div>
           <span className="text-gradient" style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-            三门科数
+            查重检测系统
           </span>
         </Link>
 
