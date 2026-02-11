@@ -6,6 +6,7 @@ from sqlalchemy import text
 from app.api.auth import fastapi_users, auth_backend
 from app.api.users import router as users_router
 from app.api.admin import router as admin_router
+from app.api.library import router as library_router
 from app.schemas import UserRead, UserCreate, UserUpdate
 from app.core.db import async_engine
 from app.models.base import Base
@@ -42,6 +43,7 @@ app.include_router(
 app.include_router(users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(admin_router, prefix="/api", tags=["admin"])
 app.include_router(v1_routes.router, prefix="/api/v1", tags=["analysis"])
+app.include_router(library_router, prefix="/api/v1", tags=["libraries"])
 
 
 @app.on_event("startup")

@@ -26,7 +26,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userObj: User = {
           id: userData.id,
           email: userData.email,
-          role: userData.role || 'user'
+          role: userData.role || 'user',
+          display_name: userData.display_name
         };
         setUser(userObj);
         setIsAuthenticated(true);

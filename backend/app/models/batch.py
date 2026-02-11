@@ -14,4 +14,5 @@ class Batch(Base):
     analysis_type = Column(String, default="plagiarism")  # plagiarism, ai, or both
     ai_provider = Column(String, default="local")  # AI detection provider
     ai_threshold = Column(Float, default=0.5)  # AI detection threshold
+    compare_mode = Column(String, default="library")  # library / internal / both
     created_at = Column(DateTime(timezone=True), server_default=func.now())

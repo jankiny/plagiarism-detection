@@ -4,6 +4,8 @@ import { useParams } from 'react-router-dom';
 interface PlagiarismMatch {
     similar_document: string;
     similarity: number;
+    source_type?: string;
+    library_name?: string | null;
     matches: Array<{
         source_chunk: string;
         target_chunk: string;
@@ -161,8 +163,14 @@ const ResultsPage: React.FC = () => {
                                     <div style={{ marginTop: '16px', display: 'grid', gap: '16px' }}>
                                         {doc.plagiarism_analysis.map((match, idx) => (
                                             <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                                    <span style={{ fontWeight: 600, color: 'var(--warning)' }}>匹配文档: {match.similar_document}</span>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                                                    <span style={{ fontWeight: 600, color: 'var(--warning)' }}>
+                                                        {match.source_type === 'library' && match.library_name
+                                                            ? `[${match.library_name}] ${match.similar_document}`
+                                                            : match.source_type === 'internal'
+                                                            ? `[批次内] ${match.similar_document}`
+                                                            : `匹配文档: ${match.similar_document}`}
+                                                    </span>
                                                     <span style={{ fontWeight: 700 }}>{(match.similarity * 100).toFixed(1)}%</span>
                                                 </div>
                                                 {match.matches && match.matches.length > 0 ? (

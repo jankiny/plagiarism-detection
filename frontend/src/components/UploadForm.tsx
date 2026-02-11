@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+
+interface Library {
+    id: string;
+    name: string;
+    document_count: number;
+}
 
 const UploadForm = () => {
     const [files, setFiles] = useState<File[]>([]);
@@ -8,14 +14,46 @@ const UploadForm = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [analysisType, setAnalysisType] = useState('plagiarism');
     const [aiThreshold, setAiThreshold] = useState(0.5);
+    const [compareMode, setCompareMode] = useState('library');
+    const [libraries, setLibraries] = useState<Library[]>([]);
+    const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchLibraries = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/v1/libraries', {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setLibraries(data.data || []);
+                }
+            } catch (e) {
+                console.error('加载文档库列表失败', e);
+            }
+        };
+        fetchLibraries();
+    }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) setFiles(Array.from(e.target.files));
     };
 
+    const toggleLibrary = (id: string) => {
+        setSelectedLibraryIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (files.length === 0) return;
+
+        if (compareMode !== 'internal' && selectedLibraryIds.length === 0) {
+            setError('请至少选择一个文档库进行对比');
+            return;
+        }
 
         setIsUploading(true);
         setError(null);
@@ -30,10 +68,11 @@ const UploadForm = () => {
             check_ai: analysisType === 'ai' || analysisType === 'both'
         };
         formData.append('options', JSON.stringify(options));
+        formData.append('library_ids', JSON.stringify(selectedLibraryIds));
+        formData.append('compare_mode', compareMode);
 
         try {
             const token = localStorage.getItem('token');
-            // Use V1 endpoint
             const response = await fetch(`/api/v1/analyze`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
@@ -46,7 +85,7 @@ const UploadForm = () => {
             }
 
             const data = await response.json();
-            setBatchId(data.batch_id); // V1 returns direct object, not nested data
+            setBatchId(data.batch_id);
             setFiles([]);
         } catch (e: any) {
             setError(e.message);
@@ -59,10 +98,10 @@ const UploadForm = () => {
         <div className="container fade-in" style={{ padding: '60px 0' }}>
             <div style={{ marginBottom: '60px', textAlign: 'center' }}>
                 <h1 className="text-gradient" style={{ fontSize: '56px', fontWeight: 800, marginBottom: '16px', letterSpacing: '-0.02em' }}>
-                    内容分析
+                    查重检测
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '18px' }}>
-                    上传文档、图片或压缩包进行深度分析。
+                    上传文档，选择对比文档库，开始深度分析。
                 </p>
             </div>
 
@@ -103,6 +142,89 @@ const UploadForm = () => {
                         </div>
                     </div>
 
+                    {/* Compare Mode */}
+                    {(analysisType === 'plagiarism' || analysisType === 'both') && (
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '20px', fontSize: '16px', fontWeight: 700, color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                对比模式
+                            </label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                {[
+                                    { id: 'library', label: '文档库对比', desc: '与历史文档库对比' },
+                                    { id: 'internal', label: '批次内对比', desc: '本次上传的文档互相对比' },
+                                    { id: 'both', label: '全面对比', desc: '文档库+批次内都对比' },
+                                ].map(mode => (
+                                    <label key={mode.id} style={{ cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="compareMode"
+                                            value={mode.id}
+                                            checked={compareMode === mode.id}
+                                            onChange={(e) => setCompareMode(e.target.value)}
+                                            style={{ display: 'none' }}
+                                        />
+                                        <div className={`glass card-hover ${compareMode === mode.id ? 'active-card' : ''}`} style={{
+                                            textAlign: 'center',
+                                            padding: '20px 16px',
+                                            borderRadius: '16px',
+                                            transition: 'var(--transition)'
+                                        }}>
+                                            <span style={{ fontSize: '14px', fontWeight: 700 }}>{mode.label}</span>
+                                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>{mode.desc}</p>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Library Selector */}
+                    {(analysisType === 'plagiarism' || analysisType === 'both') && compareMode !== 'internal' && (
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '20px', fontSize: '16px', fontWeight: 700, color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                选择对比文档库
+                            </label>
+                            {libraries.length > 0 ? (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+                                    {libraries.map(lib => (
+                                        <label key={lib.id} style={{ cursor: 'pointer' }}>
+                                            <div
+                                                onClick={() => toggleLibrary(lib.id)}
+                                                className={`glass card-hover ${selectedLibraryIds.includes(lib.id) ? 'active-card' : ''}`}
+                                                style={{
+                                                    padding: '16px 20px',
+                                                    borderRadius: '16px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px',
+                                                    transition: 'var(--transition)',
+                                                }}
+                                            >
+                                                <div style={{
+                                                    width: '20px', height: '20px', borderRadius: '6px',
+                                                    border: selectedLibraryIds.includes(lib.id) ? '2px solid var(--primary)' : '2px solid rgba(255,255,255,0.2)',
+                                                    background: selectedLibraryIds.includes(lib.id) ? 'var(--primary)' : 'transparent',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    flexShrink: 0,
+                                                }}>
+                                                    {selectedLibraryIds.includes(lib.id) && <span style={{ color: 'white', fontSize: '12px' }}>✓</span>}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 600, fontSize: '14px' }}>{lib.name}</div>
+                                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{lib.document_count} 个文档</div>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="glass" style={{ padding: '24px', textAlign: 'center', borderRadius: '16px' }}>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>暂无可用的文档库，请联系版主创建。</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* AI Threshold Slider */}
                     {(analysisType === 'ai' || analysisType === 'both') && (
                         <div>
@@ -111,10 +233,7 @@ const UploadForm = () => {
                                 <span>{Math.round(aiThreshold * 100)}%</span>
                             </label>
                             <input
-                                type="range"
-                                min="0.1"
-                                max="0.9"
-                                step="0.05"
+                                type="range" min="0.1" max="0.9" step="0.05"
                                 value={aiThreshold}
                                 onChange={(e) => setAiThreshold(parseFloat(e.target.value))}
                                 style={{ width: '100%', accentColor: 'var(--primary)' }}
@@ -147,12 +266,7 @@ const UploadForm = () => {
                             <p style={{ fontSize: '15px', color: 'var(--text-muted)' }}>
                                 支持 PDF、DOCX、TXT、PNG、JPG、ZIP、TAR
                             </p>
-                            <input
-                                type="file"
-                                multiple
-                                onChange={handleFileChange}
-                                style={{ display: 'none' }}
-                            />
+                            <input type="file" multiple onChange={handleFileChange} style={{ display: 'none' }} />
                         </label>
                     </div>
 
@@ -170,11 +284,8 @@ const UploadForm = () => {
                             <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'grid', gap: '12px', paddingRight: '8px' }}>
                                 {files.map((file, i) => (
                                     <div key={i} className="glass" style={{
-                                        padding: '16px 20px',
-                                        fontSize: '14px',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
+                                        padding: '16px 20px', fontSize: '14px',
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                         borderRadius: '16px'
                                     }}>
                                         <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>
@@ -190,18 +301,14 @@ const UploadForm = () => {
                     )}
 
                     <button type="submit" className="btn-primary" disabled={files.length === 0 || isUploading} style={{
-                        width: '100%',
-                        padding: '20px',
-                        fontSize: '18px',
-                        fontWeight: 800,
-                        borderRadius: '18px'
+                        width: '100%', padding: '20px', fontSize: '18px', fontWeight: 800, borderRadius: '18px'
                     }}>
                         {isUploading ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div className="spinner" style={{ width: '24px', height: '24px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }} />
                                 处理中...
                             </div>
-                        ) : '开始深度分析'}
+                        ) : '开始检测'}
                     </button>
                 </form>
 

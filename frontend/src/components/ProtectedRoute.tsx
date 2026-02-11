@@ -7,32 +7,35 @@ interface ProtectedRouteProps {
   requiredRole?: 'admin' | 'moderator' | 'user';
 }
 
+const roleLevel: Record<string, number> = {
+  user: 1,
+  moderator: 2,
+  admin: 3,
+};
+
 const ProtectedRoute = ({ children, requiredRole = 'user' }: ProtectedRouteProps) => {
   const authContext = useContext(AuthContext);
   const location = useLocation();
-  
-  // Check if context exists
+
   if (!authContext) {
-    // If context is not available, redirect to login
     return <Navigate to="/login" replace />;
   }
 
-  const { isAuthenticated, token } = authContext;
+  const { isAuthenticated, token, user } = authContext;
 
-  // Check if user is authenticated
   if (!isAuthenticated || !token) {
-    // Redirect to login with return url
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If this is an admin route, we'll check the user's role via API call
-  if (requiredRole === 'admin') {
-    // For now, we'll just render the component and let the backend handle authorization
-    // In a real app, you might want to fetch user data first to check role
-    return children;
+  // 角色权限检查：admin > moderator > user
+  if (requiredRole !== 'user' && user) {
+    const userLevel = roleLevel[user.role] || 0;
+    const requiredLevel = roleLevel[requiredRole] || 0;
+    if (userLevel < requiredLevel) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
-  // For other roles, just check authentication
   return children;
 };
 

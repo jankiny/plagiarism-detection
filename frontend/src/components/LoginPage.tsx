@@ -41,7 +41,7 @@ const LoginPage = () => {
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
           <h2 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '8px' }}>欢迎回来</h2>
           <p style={{ color: 'var(--text-secondary)' }}>
-            还没有账号？ <Link to="/register" style={{ color: 'var(--primary)' }}>注册</Link>
+            请使用管理员分配的账号登录
           </p>
         </div>
 

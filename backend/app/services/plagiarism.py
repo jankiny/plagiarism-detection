@@ -1,8 +1,11 @@
 import math
 from typing import List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 from app.models import Document
+from app.models.library_document import LibraryDocument
+from app.models.document_library import DocumentLibrary
+from app.models.batch_library import BatchLibrary
 from app.services.embedding import EmbeddingService
 
 
@@ -92,7 +95,104 @@ class PlagiarismService:
                     "filename": other_doc.filename,
                     "similarity": comparison["score"],
                     "matches": comparison["matches"],
+                    "source_type": "internal",
                 })
+
+        results.sort(key=lambda x: x["similarity"], reverse=True)
+        return results
+
+    async def find_similar_in_libraries(
+        self, document: Document, library_ids: List[str], top_k: int = 10
+    ) -> List[Dict[str, Any]]:
+        """在指定文档库中查找与给定文档相似的历史文档（两阶段检索）"""
+        if not self.db_session:
+            raise ValueError("需要数据库会话才能进行文档库搜索")
+
+        if not document.embedding or not library_ids:
+            return []
+
+        results = []
+
+        # 阶段1: 使用 pgvector 的 cosine_distance 做向量粗筛
+        try:
+            embedding_str = "[" + ",".join(str(x) for x in document.embedding) + "]"
+            query = text("""
+                SELECT ld.id, ld.library_id, ld.filename, ld.text_content,
+                       dl.name as library_name,
+                       (ld.embedding <=> :embedding::vector) as distance
+                FROM library_documents ld
+                JOIN document_libraries dl ON dl.id = ld.library_id
+                WHERE ld.library_id = ANY(:library_ids)
+                  AND ld.status = 'ready'
+                  AND ld.embedding IS NOT NULL
+                ORDER BY distance ASC
+                LIMIT :top_k
+            """)
+
+            import uuid as uuid_mod
+            lib_id_list = [uuid_mod.UUID(lid) if isinstance(lid, str) else lid for lid in library_ids]
+
+            result = await self.db_session.execute(
+                query,
+                {
+                    "embedding": embedding_str,
+                    "library_ids": lib_id_list,
+                    "top_k": top_k,
+                }
+            )
+            candidates = result.fetchall()
+        except Exception as e:
+            print(f"向量粗筛失败: {e}")
+            # Fallback: 直接查询所有文档库文档
+            query = select(LibraryDocument).where(
+                LibraryDocument.library_id.in_(library_ids),
+                LibraryDocument.status == "ready",
+            )
+            result = await self.db_session.execute(query)
+            all_lib_docs = result.scalars().all()
+
+            candidates = []
+            for lib_doc in all_lib_docs:
+                if lib_doc.embedding:
+                    dist = 1.0 - self.calculate_similarity(
+                        list(document.embedding), list(lib_doc.embedding)
+                    )
+                    # 获取库名
+                    lib = await self.db_session.get(DocumentLibrary, lib_doc.library_id)
+                    lib_name = lib.name if lib else "未知文档库"
+                    candidates.append((
+                        lib_doc.id, lib_doc.library_id, lib_doc.filename,
+                        lib_doc.text_content, lib_name, dist
+                    ))
+            candidates.sort(key=lambda x: x[5])
+            candidates = candidates[:top_k]
+
+        # 阶段2: 对命中文档做分块级精确比较
+        for candidate in candidates:
+            lib_doc_id, library_id, filename, lib_text, library_name, distance = candidate
+
+            similarity = 1.0 - distance
+            if similarity < 0.1:
+                continue
+
+            # 精确分块比较
+            if document.text_content and lib_text:
+                detailed = await self.compare_documents(document.text_content, lib_text)
+                final_similarity = detailed["score"] if detailed["score"] > 0 else similarity
+                matches = detailed["matches"]
+            else:
+                final_similarity = similarity
+                matches = []
+
+            results.append({
+                "library_document_id": str(lib_doc_id),
+                "library_id": str(library_id),
+                "library_name": library_name,
+                "filename": filename,
+                "similarity": final_similarity,
+                "matches": matches,
+                "source_type": "library",
+            })
 
         results.sort(key=lambda x: x["similarity"], reverse=True)
         return results

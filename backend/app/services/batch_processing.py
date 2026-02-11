@@ -5,6 +5,7 @@ from app.core.config import settings
 from app.models.batch import Batch
 from app.models.document import Document
 from app.models.comparison import Comparison
+from app.models.batch_library import BatchLibrary
 from app.services.embedding import EmbeddingService
 from app.services.ai_detection import AIDetectionService
 import asyncio
@@ -40,6 +41,15 @@ async def _process_batch_async(batch_id: str, ai_threshold: float):
         documents = result.scalars().all()
 
         analysis_type = batch.analysis_type or "plagiarism"
+        compare_mode = batch.compare_mode or "library"
+
+        # 获取批次关联的文档库 ID 列表
+        library_ids = []
+        if compare_mode in ["library", "both"]:
+            lib_result = await session.execute(
+                select(BatchLibrary.library_id).where(BatchLibrary.batch_id == batch_id)
+            )
+            library_ids = [str(row[0]) for row in lib_result.fetchall()]
 
         from app.services.plagiarism import PlagiarismService
         plagiarism_service = PlagiarismService(session)
@@ -78,16 +88,38 @@ async def _process_batch_async(batch_id: str, ai_threshold: float):
                         embedding = embedding_service.generate_text_embedding(doc.text_content)
                         doc.embedding = embedding
 
-                        similar_results = await plagiarism_service.find_similar_in_batch(doc, batch_id)
-
-                        for res in similar_results:
-                            comparison = Comparison(
-                                doc_a=doc.id,
-                                doc_b=res["document_id"],
-                                similarity=res["similarity"],
-                                matches=res.get("matches", []),
+                        # 根据 compare_mode 执行不同的对比策略
+                        # 文档库对比
+                        if compare_mode in ["library", "both"] and library_ids:
+                            library_results = await plagiarism_service.find_similar_in_libraries(
+                                doc, library_ids
                             )
-                            session.add(comparison)
+                            for res in library_results:
+                                comparison = Comparison(
+                                    doc_a=doc.id,
+                                    doc_b=None,
+                                    similarity=res["similarity"],
+                                    matches=res.get("matches", []),
+                                    source_type="library",
+                                    library_id=res.get("library_id"),
+                                    library_doc_id=res.get("library_document_id"),
+                                )
+                                session.add(comparison)
+
+                        # 批次内对比
+                        if compare_mode in ["internal", "both"]:
+                            internal_results = await plagiarism_service.find_similar_in_batch(
+                                doc, batch_id
+                            )
+                            for res in internal_results:
+                                comparison = Comparison(
+                                    doc_a=doc.id,
+                                    doc_b=res["document_id"],
+                                    similarity=res["similarity"],
+                                    matches=res.get("matches", []),
+                                    source_type="internal",
+                                )
+                                session.add(comparison)
 
                 doc.status = "completed"
                 await session.commit()

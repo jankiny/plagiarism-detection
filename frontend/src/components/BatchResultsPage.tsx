@@ -12,7 +12,7 @@ const BatchResultsPage = () => {
             setIsLoading(true);
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`/api/v1/batch/${batchId}/results`, {
+                const response = await fetch(`/api/v1/batches/${batchId}/results`, {
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
 
