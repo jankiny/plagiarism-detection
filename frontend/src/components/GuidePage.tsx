@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const GuidePage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('intro');
-  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
 
   const sections = [
     { id: 'intro', title: '一、平台简介' },
