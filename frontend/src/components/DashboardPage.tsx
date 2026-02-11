@@ -6,27 +6,43 @@ interface Metrics {
     num_documents: number;
 }
 
+interface Batch {
+    id: string;
+    created_at: string;
+    total_docs: number;
+    status: string;
+    analysis_type: string;
+}
+
 const DashboardPage = () => {
     const [metrics, setMetrics] = useState<Metrics | null>(null);
+    const [batches, setBatches] = useState<Batch[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchMetrics = async () => {
+        const fetchData = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('/api/v1/users/me/dashboard', {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                });
+                const headers = { 'Authorization': `Bearer ${token}` };
 
-                if (!response.ok) throw new Error('获取数据失败');
-                const data = await response.json();
-                setMetrics(data.data);
+                // Fetch Metrics
+                const metricsRes = await fetch('/api/v1/users/me/dashboard', { headers });
+                if (!metricsRes.ok) throw new Error('获取数据失败');
+                const metricsData = await metricsRes.json();
+                setMetrics(metricsData.data);
+
+                // Fetch Batches
+                const batchesRes = await fetch('/api/v1/batches', { headers });
+                if (batchesRes.ok) {
+                    const batchesData = await batchesRes.json();
+                    setBatches(batchesData.data);
+                }
             } catch (e: any) {
                 setError(e.message);
             }
         };
 
-        fetchMetrics();
+        fetchData();
     }, []);
 
     const avg = metrics ? (metrics.num_documents / metrics.num_batches || 0).toFixed(1) : 0;
@@ -47,25 +63,6 @@ const DashboardPage = () => {
                     <p style={{ color: 'var(--error)', fontWeight: 500 }}>⚠️ 错误: {error}</p>
                 </div>
             )}
-
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '40px' }}>
-                <button
-                    onClick={() => {
-                        alert("请前往具体批次页面导出结果。");
-                    }}
-                    className="btn-secondary"
-                    style={{ padding: '12px 24px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                    <span>📄</span> 导出PDF报告
-                </button>
-                <button
-                    onClick={() => alert("请前往具体批次页面导出结果。")}
-                    className="btn-secondary"
-                    style={{ padding: '12px 24px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                    <span>📊</span> 导出CSV数据
-                </button>
-            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px', marginBottom: '60px' }}>
                 {[
@@ -92,7 +89,7 @@ const DashboardPage = () => {
                 ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px', marginBottom: '60px' }}>
                 <Link to="/upload" className="glass card-hover" style={{ textDecoration: 'none', color: 'inherit', padding: '40px', display: 'flex', alignItems: 'center', gap: '24px' }}>
                     <div style={{ fontSize: '40px', background: 'rgba(99, 102, 241, 0.1)', width: '80px', height: '80px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                         📤
@@ -112,6 +109,52 @@ const DashboardPage = () => {
                         <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>分析文本是否由AI生成</p>
                     </div>
                 </Link>
+            </div>
+
+            <div className="glass" style={{ padding: '40px' }}>
+                <h3 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px' }}>最近检测记录</h3>
+                {batches.length === 0 ? (
+                    <p style={{ color: 'var(--text-secondary)' }}>暂无记录</p>
+                ) : (
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>ID</th>
+                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>时间</th>
+                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>文档数</th>
+                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>状态</th>
+                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {batches.map(batch => (
+                                    <tr key={batch.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                        <td style={{ padding: '16px', fontFamily: 'monospace' }}>{batch.id.substring(0, 8)}...</td>
+                                        <td style={{ padding: '16px' }}>{new Date(batch.created_at).toLocaleString()}</td>
+                                        <td style={{ padding: '16px' }}>{batch.total_docs}</td>
+                                        <td style={{ padding: '16px' }}>
+                                            <span style={{
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '12px',
+                                                background: batch.status === 'completed' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(99, 102, 241, 0.2)',
+                                                color: batch.status === 'completed' ? '#34d399' : '#818cf8'
+                                            }}>
+                                                {batch.status}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px' }}>
+                                            <Link to={`/batch/${batch.id}`} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
+                                                查看详情 &rarr;
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

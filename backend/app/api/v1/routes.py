@@ -106,6 +106,39 @@ async def analyze_content(
     )
 
 
+@router.get("/batches")
+async def list_user_batches(
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    user: User = Depends(fastapi_users.current_user()),
+):
+    """获取用户的所有批次列表"""
+    from app.models import Batch
+    from sqlalchemy import select, desc
+
+    batches = db.execute(
+        select(Batch)
+        .where(Batch.user_id == user.id)
+        .order_by(desc(Batch.created_at))
+        .offset(skip)
+        .limit(limit)
+    ).scalars().all()
+
+    return {
+        "data": [
+            {
+                "id": str(b.id),
+                "created_at": b.created_at,
+                "total_docs": b.total_docs,
+                "status": b.status,
+                "analysis_type": b.analysis_type
+            }
+            for b in batches
+        ]
+    }
+
+
 @router.get("/ai-detection/health")
 async def ai_health_check():
     """AI 检测服务健康检查"""
