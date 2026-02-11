@@ -7,9 +7,6 @@ const UploadForm = () => {
     const [error, setError] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [analysisType, setAnalysisType] = useState('plagiarism');
-
-    // New Options
-    const [provider, setProvider] = useState('local');
     const [aiThreshold, setAiThreshold] = useState(0.5);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,9 +24,7 @@ const UploadForm = () => {
         const formData = new FormData();
         files.forEach(file => formData.append('files', file));
 
-        // Add options
         const options = {
-            provider,
             ai_threshold: aiThreshold,
             check_plagiarism: analysisType === 'plagiarism' || analysisType === 'both',
             check_ai: analysisType === 'ai' || analysisType === 'both'
@@ -73,46 +68,6 @@ const UploadForm = () => {
 
             <div className="glass" style={{ padding: '48px', borderRadius: '32px', boxShadow: '0 30px 60px rgba(0,0,0,0.4)' }}>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-
-                    {/* Provider Selection */}
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '20px', fontSize: '16px', fontWeight: 700, color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                            AI检测服务商
-                        </label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                            {[
-                                { id: 'local', label: '本地模型', desc: '免费、快速、私密' },
-                                { id: 'openai', label: 'OpenAI', desc: '高精度、付费' },
-                                { id: 'together', label: 'Together AI', desc: '开源模型、快速' }
-                            ].map(p => (
-                                <label key={p.id} style={{ cursor: 'pointer' }}>
-                                    <input
-                                        type="radio"
-                                        name="provider"
-                                        value={p.id}
-                                        checked={provider === p.id}
-                                        onChange={(e) => setProvider(e.target.value)}
-                                        style={{ display: 'none' }}
-                                    />
-                                    <div className={`glass card-hover ${provider === p.id ? 'active-card' : ''}`} style={{
-                                        textAlign: 'center',
-                                        padding: '20px',
-                                        borderRadius: '16px',
-                                        transition: 'var(--transition)',
-                                        border: provider === p.id ? '2px solid var(--primary)' : '2px solid transparent'
-                                    }}>
-                                        <div style={{ fontWeight: 700, marginBottom: '4px' }}>{p.label}</div>
-                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{p.desc}</div>
-                                    </div>
-                                </label>
-                            ))}
-                        </div>
-                        {provider !== 'local' && (
-                            <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                ⚠️ 外部服务商可能产生费用，且数据会发送至第三方。
-                            </div>
-                        )}
-                    </div>
 
                     {/* Analysis Type */}
                     <div>

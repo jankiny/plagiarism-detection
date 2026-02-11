@@ -10,36 +10,32 @@ from app.models.user import User
 from app.api.auth import fastapi_users
 from app.services.ai_detection import AIDetectionService
 from app.services.plagiarism import PlagiarismService
-from app.core.provider_router import ProviderRouter, ProviderType
-from typing import Dict, Any
 
 router = APIRouter()
 ai_service = AIDetectionService()
-# PlagiarismService needs a session, so we instantiate it per request
+
 
 class AnalysisOptions(BaseModel):
-    provider: str = Field(default=ProviderType.LOCAL, description="AI detection provider (local, openai, together)")
     ai_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
     check_plagiarism: bool = True
     check_ai: bool = True
+
 
 class AnalysisResponse(BaseModel):
     batch_id: str
     status: str
     message: str
 
+
 @router.post("/analyze", response_model=AnalysisResponse)
 async def analyze_content(
     files: List[UploadFile] = File(default=[]),
     text: Optional[str] = Form(default=None),
-    options: str = Form(default='{"provider": "local", "check_plagiarism": true, "check_ai": true}'),
+    options: str = Form(default='{"check_plagiarism": true, "check_ai": true}'),
     db: Session = Depends(get_db),
-    user: User = Depends(fastapi_users.current_user())
+    user: User = Depends(fastapi_users.current_user()),
 ):
-    """
-    Unified endpoint for analyzing content (files or text).
-    Supports Plagiarism and AI Detection with configurable providers.
-    """
+    """统一内容分析接口（文件或文本），支持查重和 AI 检测。"""
     try:
         parsed_options = json.loads(options)
         opts = AnalysisOptions(**parsed_options)
@@ -49,8 +45,8 @@ async def analyze_content(
     if not files and not text:
         raise HTTPException(status_code=400, detail="必须提供文件或文本")
 
-    # Create Batch
     from app.models import Batch, Document
+
     batch_id = uuid.uuid4()
     batch = Batch(
         id=batch_id,
@@ -58,12 +54,10 @@ async def analyze_content(
         total_docs=0,
         status="queued",
         analysis_type="mixed",
-        ai_provider=opts.provider,
-        ai_threshold=opts.ai_threshold
+        ai_threshold=opts.ai_threshold,
     )
     db.add(batch)
-    
-    # Process Text Input
+
     docs_to_process = []
     if text:
         doc_id = uuid.uuid4()
@@ -73,33 +67,33 @@ async def analyze_content(
             filename="input_text.txt",
             storage_path=f"{batch_id}/input_text.txt",
             text_content=text,
-            status="queued"
+            status="queued",
         )
         db.add(doc)
         docs_to_process.append(doc)
 
-    # Process Uploaded Files
     from app.services.parsing import extract_text_from_file
     from app.services.storage import StorageService
+
     storage_service = StorageService()
-    
+
     for file in files:
         content = await file.read()
         storage_path = f"{batch_id}/{file.filename}"
         storage_service.save(storage_path, content)
-        
-        # Extract text
+
         from io import BytesIO
+
         file_obj = BytesIO(content)
         file_obj.name = file.filename
         text_content = await extract_text_from_file(file_obj)
-        
+
         doc = Document(
             batch_id=batch_id,
             filename=file.filename,
             storage_path=storage_path,
             text_content=text_content,
-            status="queued"
+            status="queued",
         )
         db.add(doc)
         docs_to_process.append(doc)
@@ -107,77 +101,60 @@ async def analyze_content(
     batch.total_docs = len(docs_to_process)
     await db.commit()
 
-    # Trigger Processing (Async) - Options stored in batch
     from app.services.batch_processing import process_batch
-    
-    process_batch.delay(str(batch_id), provider=opts.provider, ai_threshold=opts.ai_threshold)
+
+    process_batch.delay(str(batch_id), ai_threshold=opts.ai_threshold)
 
     return AnalysisResponse(
-        batch_id=str(batch_id),
-        status="queued",
-        message="分析已成功启动"
+        batch_id=str(batch_id), status="queued", message="分析已成功启动"
     )
+
 
 @router.get("/ai-detection/health")
 async def ai_health_check():
-    """Health check for AI detection service."""
+    """AI 检测服务健康检查"""
     health_status = ai_service.health_check()
     return {"service": "ai_detection", "health": health_status}
+
 
 @router.post("/ai-detection")
 async def detect_ai_only(
     text: str = Body(..., embed=True),
-    provider: str = Body("local", embed=True),
     threshold: float = Body(0.5, embed=True),
-    user: User = Depends(fastapi_users.current_user())
+    user: User = Depends(fastapi_users.current_user()),
 ):
-    """
-    Direct AI detection endpoint for text.
-    """
+    """直接对文本进行 AI 检测"""
+    if not ai_service.is_available:
+        raise HTTPException(status_code=503, detail="AI 检测未启用：未配置 AI API")
+
     try:
-        ai_result = ai_service.detect(text, provider=provider, threshold=threshold)
-        
-        # Create temporary document to store result
-        from app.models.document import Document
-        from app.models.ai_detection import AIDetection
-        from sqlalchemy.orm import Session
-        from app.core.db import get_db
-        
-        # Note: For this endpoint, we're returning the result directly
-        # In a full implementation, we might want to store this in the DB
-        return {
-            "is_ai": ai_result["is_ai"],
-            "score": ai_result["score"],
-            "confidence": ai_result["confidence"],
-            "label": ai_result["label"],
-            "provider": ai_result["provider"],
-            "details": ai_result["details"]
-        }
+        ai_result = ai_service.detect(text, threshold=threshold)
+        return {"data": ai_result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI检测失败: {str(e)}")
+
 
 @router.get("/batches/{batch_id}/results")
 async def get_batch_results(
     batch_id: uuid.UUID,
     db: Session = Depends(get_db),
-    user: User = Depends(fastapi_users.current_user())
+    user: User = Depends(fastapi_users.current_user()),
 ):
-    """
-    Get detailed results for a batch, including AI scores and plagiarism matches.
-    """
+    """获取批次的详细结果，包括 AI 分数和查重匹配。"""
     from app.models import Batch, Document, Comparison
     from sqlalchemy import select
     from sqlalchemy.orm import aliased
 
-    batch = db.query(Batch).filter(Batch.id == batch_id, Batch.user_id == user.id).first()
+    batch = (
+        db.query(Batch).filter(Batch.id == batch_id, Batch.user_id == user.id).first()
+    )
     if not batch:
         raise HTTPException(status_code=404, detail="未找到该批次")
 
     documents = db.query(Document).filter(Document.batch_id == batch_id).all()
-    
+
     results = []
     for doc in documents:
-        # Get plagiarism comparisons
         DocB = aliased(Document)
         comparisons = db.execute(
             select(Comparison, DocB.filename.label("match_filename"))
@@ -185,26 +162,30 @@ async def get_batch_results(
             .where(Comparison.doc_a == doc.id)
             .order_by(Comparison.similarity.desc())
         ).all()
-        
+
         plagiarism_details = []
         for comp, match_filename in comparisons:
-            plagiarism_details.append({
-                "similar_document": match_filename,
-                "similarity": comp.similarity,
-                "matches": comp.matches or [] # Detailed chunks
-            })
+            plagiarism_details.append(
+                {
+                    "similar_document": match_filename,
+                    "similarity": comp.similarity,
+                    "matches": comp.matches or [],
+                }
+            )
 
-        results.append({
-            "document_id": str(doc.id),
-            "filename": doc.filename,
-            "status": doc.status,
-            "ai_analysis": {
-                "score": doc.ai_score,
-                "is_ai": doc.is_ai_generated,
-                "confidence": doc.ai_confidence,
-                "provider": doc.ai_provider
-            },
-            "plagiarism_analysis": plagiarism_details
-        })
-        
+        results.append(
+            {
+                "document_id": str(doc.id),
+                "filename": doc.filename,
+                "status": doc.status,
+                "ai_analysis": {
+                    "score": doc.ai_score,
+                    "is_ai": doc.is_ai_generated,
+                    "confidence": doc.ai_confidence,
+                    "provider": doc.ai_provider,
+                },
+                "plagiarism_analysis": plagiarism_details,
+            }
+        )
+
     return {"status": "ok", "data": results}

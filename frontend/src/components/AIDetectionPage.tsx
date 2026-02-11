@@ -5,7 +5,6 @@ const AIDetectionPage = () => {
     const [result, setResult] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [provider, setProvider] = useState('local');
     const [threshold, setThreshold] = useState(0.5);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -22,9 +21,8 @@ const AIDetectionPage = () => {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    text, 
-                    provider,
+                body: JSON.stringify({
+                    text,
                     threshold
                 }),
             });
@@ -49,44 +47,6 @@ const AIDetectionPage = () => {
 
             <div className="glass" style={{ padding: '32px' }}>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    {/* Provider Selection */}
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: 500 }}>AI检测服务商</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                            {[
-                                { id: 'local', label: '本地模型', desc: '免费、快速、私密' },
-                                { id: 'openai', label: 'OpenAI', desc: '高精度、付费' },
-                                { id: 'together', label: 'Together AI', desc: '开源模型、快速' }
-                            ].map(p => (
-                                <label key={p.id} style={{ cursor: 'pointer' }}>
-                                    <input
-                                        type="radio"
-                                        name="provider"
-                                        value={p.id}
-                                        checked={provider === p.id}
-                                        onChange={(e) => setProvider(e.target.value)}
-                                        style={{ display: 'none' }}
-                                    />
-                                    <div className={`glass card-hover ${provider === p.id ? 'active-card' : ''}`} style={{
-                                        textAlign: 'center',
-                                        padding: '12px',
-                                        borderRadius: '12px',
-                                        transition: 'var(--transition)',
-                                        border: provider === p.id ? '2px solid var(--primary)' : '2px solid transparent'
-                                    }}>
-                                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>{p.label}</div>
-                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{p.desc}</div>
-                                    </div>
-                                </label>
-                            ))}
-                        </div>
-                        {provider !== 'local' && (
-                            <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                ⚠️ 外部服务商可能产生费用
-                            </div>
-                        )}
-                    </div>
-
                     {/* Threshold Slider */}
                     <div>
                         <label style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>
@@ -158,7 +118,7 @@ const AIDetectionPage = () => {
                         </div>
                         <div style={{ marginTop: '24px', padding: '24px', background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.3)', borderRadius: '12px', fontSize: '14px', color: '#ffc107' }}>
                             <h4 style={{ fontWeight: 600, marginBottom: '8px' }}>重要声明</h4>
-                            <p>AI检测模型并非完美，可能产生误判。检测结果仅供参考，不应作为最终定论。此处使用的模型为 `roberta-base-openai-detector`，存在已知局限性。</p>
+                            <p>AI检测模型并非完美，可能产生误判。检测结果仅供参考，不应作为最终定论。</p>
                         </div>
                     </div>
                 )}

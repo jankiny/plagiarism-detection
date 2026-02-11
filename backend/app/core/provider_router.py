@@ -1,68 +1,35 @@
-import os
-from enum import Enum
-from typing import Optional, Dict, Any
 import logging
+from app.core.config import settings
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
-class ProviderType(str, Enum):
-    LOCAL = "local"
-    OPENAI = "openai"
-    TOGETHER = "together"
 
 class ProviderRouter:
     """
-    Handles routing of inference requests to the appropriate provider.
-    Validates availability and logs usage.
+    检查 AI API 是否已配置。
+    统一使用 OpenAI 兼容格式的 API（可对接任意兼容服务）。
     """
-    
+
     def __init__(self):
-        self.openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.together_api_key = os.getenv("TOGETHER_API_KEY")
-        
-        # Check for local model availability (simplified check)
-        self.local_model_available = True 
-        try:
-            import transformers
-            import torch
-        except ImportError:
-            self.local_model_available = False
-            logger.warning("Local model dependencies (transformers, torch) not found.")
+        self.api_key = settings.AI_API_KEY
+        self.base_url = settings.AI_API_BASE_URL
+        self.chat_model = settings.AI_CHAT_MODEL
+        self.embedding_model = settings.AI_EMBEDDING_MODEL
 
-    def validate_provider(self, provider: str) -> str:
-        """
-        Validates if the requested provider is available and configured.
-        Returns the validated provider string or raises ValueError.
-        """
-        provider = provider.lower()
-        
-        if provider == ProviderType.OPENAI:
-            if not self.openai_api_key:
-                raise ValueError("OpenAI provider requested but OPENAI_API_KEY is not set.")
-            return ProviderType.OPENAI
-            
-        elif provider == ProviderType.TOGETHER:
-            if not self.together_api_key:
-                raise ValueError("Together API provider requested but TOGETHER_API_KEY is not set.")
-            return ProviderType.TOGETHER
-            
-        elif provider == ProviderType.LOCAL:
-            if not self.local_model_available:
-                raise ValueError("Local provider requested but dependencies are missing.")
-            return ProviderType.LOCAL
-            
-        else:
-            raise ValueError(f"Unknown provider: {provider}. Valid options: {', '.join([p.value for p in ProviderType])}")
+    @property
+    def is_available(self) -> bool:
+        return bool(self.api_key)
 
-    def get_api_key(self, provider: str) -> Optional[str]:
-        """Returns the API key for the specified provider."""
-        if provider == ProviderType.OPENAI:
-            return self.openai_api_key
-        elif provider == ProviderType.TOGETHER:
-            return self.together_api_key
-        return None
+    def get_openai_client(self):
+        """返回一个 OpenAI 兼容的客户端实例"""
+        if not self.is_available:
+            raise ValueError("AI API 未配置，请设置 AI_API_KEY 环境变量。")
 
-    def log_usage(self, provider: str, operation: str, details: Dict[str, Any] = None):
-        """Logs provider usage for audit and debugging."""
-        logger.info(f"Provider Usage: {provider} | Operation: {operation} | Details: {details or {}}")
+        from openai import OpenAI
+        kwargs = {"api_key": self.api_key}
+        if self.base_url:
+            kwargs["base_url"] = self.base_url
+        return OpenAI(**kwargs)
+
+    def log_usage(self, operation: str, details: dict = None):
+        logger.info(f"AI API 调用: {operation} | 模型: {self.chat_model} | 详情: {details or {}}")
