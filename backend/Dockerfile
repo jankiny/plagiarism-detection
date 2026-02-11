@@ -32,18 +32,16 @@ RUN pip install --upgrade pip -i https://mirrors.ustc.edu.cn/pypi/web/simple --t
 # Copy project
 COPY . .
 
+# Fix line endings and set executable permission (before switching user)
+RUN sed -i 's/\r$//' /app/startup.sh && chmod +x /app/startup.sh
+
 # Expose port
 EXPOSE 8000
 
-# Run the application
 # Create non-root user for security
 RUN adduser --disabled-password --gecos '' appuser
 RUN chown -R appuser:appuser /app
 USER appuser
-
-# Copy startup script and ensure it has correct line endings and permissions
-COPY --chown=appuser:appuser startup.sh /app/startup.sh
-RUN sed -i 's/\r$//' /app/startup.sh && chmod +x /app/startup.sh
 
 # Run the application with the startup script
 CMD ["/app/startup.sh"]
