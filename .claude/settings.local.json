@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git -C \"C:\\\\Users\\\\janki\\\\projects\\\\plagiarism-detection\" config:*)"
+      "Bash(git -C \"C:\\\\Users\\\\janki\\\\projects\\\\plagiarism-detection\" config:*)",
+      "WebSearch",
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:fastapi-users.github.io)"
     ]
   }
 }
