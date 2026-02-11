@@ -41,8 +41,9 @@ RUN adduser --disabled-password --gecos '' appuser
 RUN chown -R appuser:appuser /app
 USER appuser
 
-# Create a startup script to handle database initialization
-RUN echo '#!/bin/bash\n\n# Run database migrations and seeding first\npython -m app.core.database_seed\n\n# Then start the application\ngunicorn -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --workers 4 --worker-class uvicorn.workers.UvicornWorker --timeout 120 app.main:app' > /app/startup.sh && chmod +x /app/startup.sh
+# Copy startup script and ensure it has correct line endings and permissions
+COPY --chown=appuser:appuser startup.sh /app/startup.sh
+RUN sed -i 's/\r$//' /app/startup.sh && chmod +x /app/startup.sh
 
 # Run the application with the startup script
 CMD ["/app/startup.sh"]
