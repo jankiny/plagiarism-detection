@@ -44,4 +44,4 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # Run the application with the startup script
-CMD ["/app/startup.sh"]
+CMD ["sh", "/app/startup.sh"]
