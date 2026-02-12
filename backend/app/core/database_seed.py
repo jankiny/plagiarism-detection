@@ -11,7 +11,7 @@ from app.models.base import Base
 from passlib.context import CryptContext
 
 # Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 async def get_async_session():
     """Create async database session"""

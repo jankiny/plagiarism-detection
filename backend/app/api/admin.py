@@ -14,7 +14,7 @@ from typing import List, Optional
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 

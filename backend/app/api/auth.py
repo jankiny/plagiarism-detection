@@ -18,8 +18,8 @@ import jwt
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing context — must include argon2 to match fastapi-users default
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 
 # Bearer transport for JWT token responses
