@@ -242,6 +242,7 @@ const SettingsPage: React.FC = () => {
           </button>
         </div>
       </form>
+      </div>
     </div>
   );
 };
