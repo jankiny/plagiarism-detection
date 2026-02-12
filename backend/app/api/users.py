@@ -38,7 +38,6 @@ async def change_password(
         if not pwd_context.verify(data.old_password, user.hashed_password):
             raise HTTPException(status_code=400, detail="旧密码不正确")
     except UnknownHashError:
-        # Stored hash is in an unexpected format (e.g., legacy/plaintext); ask user to reset.
         raise HTTPException(
             status_code=400,
             detail="当前账户密码格式异常，请使用忘记密码或联系管理员重置",

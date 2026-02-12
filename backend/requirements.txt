@@ -6,6 +6,7 @@ gunicorn==22.0.0
 # Auth
 fastapi-users[sqlalchemy]==13.0.0
 passlib==1.7.4
+bcrypt==4.2.0
 PyJWT==2.8.0
 
 # Database
