@@ -37,11 +37,15 @@ async def change_password(
     try:
         if not pwd_context.verify(data.old_password, user.hashed_password):
             raise HTTPException(status_code=400, detail="旧密码不正确")
-    except UnknownHashError:
+    except UnknownHashError as exc:
+        # 直接把具体异常透出，便于定位异常哈希格式
         raise HTTPException(
             status_code=400,
-            detail="当前账户密码格式异常，请使用忘记密码或联系管理员重置",
+            detail=f"密码格式异常: {exc}. 请使用忘记密码或联系管理员重置",
         )
+    except Exception as exc:
+        # 兜底捕获其它验证异常并返回具体原因
+        raise HTTPException(status_code=500, detail=f"密码验证异常: {exc}")
 
     user.hashed_password = pwd_context.hash(data.new_password)
     await db.commit()
