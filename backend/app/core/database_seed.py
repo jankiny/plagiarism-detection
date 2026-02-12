@@ -91,25 +91,25 @@ async def seed_database():
                 print(f"Admin user already exists: {existing_admin.email}")
 
             # Create sample users if they don't exist
-            sample_users = [
-                {"email": "user1@example.com", "password": "UserPass123!", "role": "user", "display_name": "测试用户1"},
-                {"email": "user2@example.com", "password": "UserPass123!", "role": "user", "display_name": "测试用户2"},
-                {"email": "moderator@example.com", "password": "ModPass123!", "role": "moderator", "display_name": "版主"},
-            ]
+            # sample_users = [
+            #     {"email": "user1@example.com", "password": "UserPass123!", "role": "user", "display_name": "测试用户1"},
+            #     {"email": "user2@example.com", "password": "UserPass123!", "role": "user", "display_name": "测试用户2"},
+            #     {"email": "moderator@example.com", "password": "ModPass123!", "role": "moderator", "display_name": "版主"},
+            # ]
 
-            for user_data in sample_users:
-                existing_user = await get_user_by_email(session, user_data["email"])
-                if not existing_user:
-                    user = await create_user(
-                        session,
-                        user_data["email"],
-                        user_data["password"],
-                        user_data["role"],
-                        user_data.get("display_name")
-                    )
-                    print(f"Created user: {user.email} with role: {user.role}")
-                else:
-                    print(f"User already exists: {existing_user.email}")
+            # for user_data in sample_users:
+            #     existing_user = await get_user_by_email(session, user_data["email"])
+            #     if not existing_user:
+            #         user = await create_user(
+            #             session,
+            #             user_data["email"],
+            #             user_data["password"],
+            #             user_data["role"],
+            #             user_data.get("display_name")
+            #         )
+            #         print(f"Created user: {user.email} with role: {user.role}")
+            #     else:
+            #         print(f"User already exists: {existing_user.email}")
 
             # 初始化系统设置（如果不存在）
             existing_settings = await session.get(SystemSettings, 1)
