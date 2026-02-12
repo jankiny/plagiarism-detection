@@ -56,6 +56,15 @@ async def startup_event():
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
 
+        # 为已有表添加缺失的列（create_all 不会更新已存在的表）
+        migrations = [
+            ("batches", "whitelist_ids", "JSON DEFAULT '[]'"),
+        ]
+        for table, column, col_type in migrations:
+            await conn.execute(text(
+                f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {col_type}"
+            ))
+
     # Seed the database with initial data
     try:
         from app.core.database_seed import seed_database
