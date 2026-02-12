@@ -1,6 +1,8 @@
+import asyncio
 import math
 import re
-from collections import Counter
+from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Any, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
@@ -9,6 +11,10 @@ from app.models.library_document import LibraryDocument
 from app.models.document_library import DocumentLibrary
 from app.models.batch_library import BatchLibrary
 from app.services.embedding import EmbeddingService
+
+
+# 用于并行精确对比的线程池
+_executor = ThreadPoolExecutor(max_workers=4)
 
 
 class PlagiarismService:
@@ -36,46 +42,79 @@ class PlagiarismService:
             return [''.join(tokens)] if tokens else []
         return [''.join(tokens[i:i+n]) for i in range(len(tokens) - n + 1)]
 
+    # ==================== 第1层：预计算指纹 ====================
+
+    @classmethod
+    def _precompute_chunk(cls, chunk_text: str) -> Dict[str, Any]:
+        """对单个 chunk 一次性预计算所有需要的指纹数据"""
+        tokens = cls.tokenize(chunk_text)
+        if not tokens:
+            return {
+                "tokens": [],
+                "bigram_set": frozenset(),
+                "trigram_counter": Counter(),
+                "trigram_norm": 0.0,
+            }
+
+        bigrams = cls.ngrams(tokens, 2)
+        trigrams = cls.ngrams(tokens, 3)
+        trigram_counter = Counter(trigrams)
+        trigram_norm = math.sqrt(sum(v * v for v in trigram_counter.values()))
+
+        return {
+            "tokens": tokens,
+            "bigram_set": frozenset(bigrams),
+            "trigram_counter": trigram_counter,
+            "trigram_norm": trigram_norm,
+        }
+
+    @staticmethod
+    def _similarity_from_fingerprints(fp_a: Dict, fp_b: Dict) -> float:
+        """基于预计算指纹直接计算相似度，无需重新分词"""
+        bigram_set_a = fp_a["bigram_set"]
+        bigram_set_b = fp_b["bigram_set"]
+
+        if not bigram_set_a or not bigram_set_b:
+            return 0.0
+
+        # Jaccard (2-gram)
+        intersection = len(bigram_set_a & bigram_set_b)
+        union = len(bigram_set_a | bigram_set_b)
+        jaccard = intersection / union if union else 0.0
+
+        # Cosine (3-gram) - 优化：只遍历较小的 Counter
+        counter_a = fp_a["trigram_counter"]
+        counter_b = fp_b["trigram_counter"]
+        norm_a = fp_a["trigram_norm"]
+        norm_b = fp_b["trigram_norm"]
+
+        if norm_a == 0 or norm_b == 0:
+            return round(0.4 * jaccard, 4)
+
+        # 遍历较小的 counter 做 dot product
+        if len(counter_a) > len(counter_b):
+            counter_a, counter_b = counter_b, counter_a
+
+        dot = sum(count * counter_b[gram] for gram, count in counter_a.items() if gram in counter_b)
+        cosine = dot / (norm_a * norm_b)
+
+        return round(0.4 * jaccard + 0.6 * cosine, 4)
+
     @classmethod
     def text_similarity(cls, text_a: str, text_b: str) -> float:
         """基于 n-gram 的文本相似度计算（Jaccard + 余弦混合）"""
         if not text_a or not text_b:
             return 0.0
 
-        tokens_a = cls.tokenize(text_a)
-        tokens_b = cls.tokenize(text_b)
+        fp_a = cls._precompute_chunk(text_a)
+        fp_b = cls._precompute_chunk(text_b)
+        return cls._similarity_from_fingerprints(fp_a, fp_b)
 
-        if not tokens_a or not tokens_b:
-            return 0.0
-
-        # 使用 2-gram 和 3-gram 混合
-        grams_a_2 = cls.ngrams(tokens_a, 2)
-        grams_b_2 = cls.ngrams(tokens_b, 2)
-        grams_a_3 = cls.ngrams(tokens_a, 3)
-        grams_b_3 = cls.ngrams(tokens_b, 3)
-
-        # Jaccard 相似度 (2-gram)
-        set_a = set(grams_a_2)
-        set_b = set(grams_b_2)
-        intersection = set_a & set_b
-        union = set_a | set_b
-        jaccard = len(intersection) / len(union) if union else 0.0
-
-        # 余弦相似度 (3-gram)
-        counter_a = Counter(grams_a_3)
-        counter_b = Counter(grams_b_3)
-        all_grams = set(counter_a.keys()) | set(counter_b.keys())
-        dot = sum(counter_a.get(g, 0) * counter_b.get(g, 0) for g in all_grams)
-        norm_a = math.sqrt(sum(v * v for v in counter_a.values()))
-        norm_b = math.sqrt(sum(v * v for v in counter_b.values()))
-        cosine = dot / (norm_a * norm_b) if (norm_a > 0 and norm_b > 0) else 0.0
-
-        # 混合得分（余弦权重更高）
-        return round(0.4 * jaccard + 0.6 * cosine, 4)
+    # ==================== 第2层：倒排索引加速分块匹配 ====================
 
     @classmethod
     def text_chunk_compare(cls, text_a: str, text_b: str, chunk_size: int = 500, overlap: int = 50) -> Dict[str, Any]:
-        """纯文本分块对比，返回总体相似度和匹配段落"""
+        """纯文本分块对比，使用倒排索引加速匹配"""
         if not text_a or not text_b:
             return {"score": 0.0, "matches": []}
 
@@ -93,22 +132,46 @@ class PlagiarismService:
         chunks_a = chunk_text(text_a)
         chunks_b = chunk_text(text_b)
 
+        # 第1层：预计算所有 chunk 的指纹（chunks_b 只算一次）
+        fps_a = [cls._precompute_chunk(c) for c in chunks_a]
+        fps_b = [cls._precompute_chunk(c) for c in chunks_b]
+
+        # 第2层：构建倒排索引 bigram -> [chunk_b 索引列表]
+        inverted_index = defaultdict(set)
+        for j, fp_b in enumerate(fps_b):
+            for bigram in fp_b["bigram_set"]:
+                inverted_index[bigram].add(j)
+
         matches = []
         total_similarity = 0.0
 
-        for i, chunk_a in enumerate(chunks_a):
+        for i, fp_a in enumerate(fps_a):
             best_score = 0.0
             best_idx = -1
 
-            for j, chunk_b in enumerate(chunks_b):
-                score = cls.text_similarity(chunk_a, chunk_b)
+            # 通过倒排索引找共享 bigram 的候选 chunk_b
+            candidate_counts = Counter()
+            for bigram in fp_a["bigram_set"]:
+                if bigram in inverted_index:
+                    for j in inverted_index[bigram]:
+                        candidate_counts[j] += 1
+
+            # 只对共享 bigram >= 3 的候选做精确计算
+            candidates_j = [j for j, cnt in candidate_counts.items() if cnt >= 3]
+
+            # 如果没有候选（文档差异很大），跳过
+            if not candidates_j:
+                continue
+
+            for j in candidates_j:
+                score = cls._similarity_from_fingerprints(fp_a, fps_b[j])
                 if score > best_score:
                     best_score = score
                     best_idx = j
 
-            if best_score > 0.3:  # 文本相似度阈值低于向量阈值
+            if best_score > 0.3:
                 matches.append({
-                    "source_chunk": chunk_a[:200],  # 截断避免过长
+                    "source_chunk": chunks_a[i][:200],
                     "target_chunk": chunks_b[best_idx][:200],
                     "score": round(best_score, 4),
                     "source_index": i,
@@ -241,32 +304,48 @@ class PlagiarismService:
             # 纯文本模式：直接查询所有文档库文档
             candidates = await self._text_search(document, library_ids)
 
-        # 对候选文档做精确对比
-        for candidate in candidates:
-            lib_doc_id, library_id, filename, lib_text, library_name, coarse_score = candidate
+        # 第3层：并行精确对比候选文档
+        valid_candidates = [c for c in candidates if c[5] >= 0.05]
+        if valid_candidates:
+            loop = asyncio.get_event_loop()
+            compare_tasks = []
+            for candidate in valid_candidates:
+                lib_doc_id, library_id, filename, lib_text, library_name, coarse_score = candidate
+                if document.text_content and lib_text:
+                    # 纯文本对比放到线程池并行执行
+                    compare_tasks.append((
+                        candidate,
+                        loop.run_in_executor(
+                            _executor,
+                            self.text_chunk_compare,
+                            document.text_content,
+                            lib_text,
+                        )
+                    ))
+                else:
+                    compare_tasks.append((candidate, None))
 
-            if coarse_score < 0.05:
-                continue
+            for candidate, task in compare_tasks:
+                lib_doc_id, library_id, filename, lib_text, library_name, coarse_score = candidate
 
-            # 精确分块比较
-            if document.text_content and lib_text:
-                detailed = await self.compare_documents(document.text_content, lib_text)
-                final_similarity = detailed["score"] if detailed["score"] > 0 else coarse_score
-                matches = detailed["matches"]
-            else:
-                final_similarity = coarse_score
-                matches = []
+                if task is not None:
+                    detailed = await task
+                    final_similarity = detailed["score"] if detailed["score"] > 0 else coarse_score
+                    matches = detailed["matches"]
+                else:
+                    final_similarity = coarse_score
+                    matches = []
 
-            if final_similarity > 0.05:
-                results.append({
-                    "library_document_id": str(lib_doc_id),
-                    "library_id": str(library_id),
-                    "library_name": library_name,
-                    "filename": filename,
-                    "similarity": final_similarity,
-                    "matches": matches,
-                    "source_type": "library",
-                })
+                if final_similarity > 0.05:
+                    results.append({
+                        "library_document_id": str(lib_doc_id),
+                        "library_id": str(library_id),
+                        "library_name": library_name,
+                        "filename": filename,
+                        "similarity": final_similarity,
+                        "matches": matches,
+                        "source_type": "library",
+                    })
 
         results.sort(key=lambda x: x["similarity"], reverse=True)
         return results[:top_k]
@@ -311,7 +390,7 @@ class PlagiarismService:
     async def _text_search(
         self, document: Document, library_ids: List[str]
     ) -> List[Tuple]:
-        """纯文本相似度搜索（不依赖向量/API）"""
+        """纯文本相似度搜索（不依赖向量/API），使用预计算指纹加速粗筛"""
         import uuid as uuid_mod
         lib_id_list = [uuid_mod.UUID(lid) if isinstance(lid, str) else lid for lid in library_ids]
 
@@ -322,20 +401,26 @@ class PlagiarismService:
         result = await self.db_session.execute(query)
         all_lib_docs = result.scalars().all()
 
+        # 第3层优化：预计算待测文档指纹（只算一次）
+        doc_fp = self._precompute_chunk(document.text_content[:2000]) if document.text_content else None
+
         candidates = []
+        # 批量获取库名，避免 N+1 查询
+        library_names = {}
         for lib_doc in all_lib_docs:
-            if not lib_doc.text_content or not document.text_content:
+            if lib_doc.library_id not in library_names:
+                lib = await self.db_session.get(DocumentLibrary, lib_doc.library_id)
+                library_names[lib_doc.library_id] = lib.name if lib else "未知文档库"
+
+        for lib_doc in all_lib_docs:
+            if not lib_doc.text_content or not doc_fp:
                 continue
 
-            # 快速粗筛：用整体文本相似度排序
-            coarse_score = self.text_similarity(
-                document.text_content[:2000],  # 取前2000字做快速对比
-                lib_doc.text_content[:2000]
-            )
+            # 粗筛：使用预计算指纹快速对比
+            lib_fp = self._precompute_chunk(lib_doc.text_content[:2000])
+            coarse_score = self._similarity_from_fingerprints(doc_fp, lib_fp)
 
-            # 获取库名
-            lib = await self.db_session.get(DocumentLibrary, lib_doc.library_id)
-            lib_name = lib.name if lib else "未知文档库"
+            lib_name = library_names[lib_doc.library_id]
 
             candidates.append((
                 lib_doc.id, lib_doc.library_id, lib_doc.filename,

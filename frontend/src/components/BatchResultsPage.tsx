@@ -15,10 +15,18 @@ const docStatusMap: Record<string, string> = {
     failed: '失败',
 };
 
+interface MatchDetail {
+    source_chunk: string;
+    target_chunk: string;
+    score: number;
+    source_index: number;
+    target_index: number;
+}
+
 interface PlagiarismDetail {
     similar_document: string;
     similarity: number;
-    matches: any[];
+    matches: MatchDetail[];
     source_type: string;
     library_name: string | null;
 }
@@ -35,6 +43,166 @@ interface DocResult {
     };
     plagiarism_analysis: PlagiarismDetail[];
 }
+
+const MatchDetailPanel = ({ match, docFilename }: { match: PlagiarismDetail; docFilename: string }) => {
+    const [expanded, setExpanded] = useState(false);
+    const hasMatches = match.matches && match.matches.length > 0;
+
+    return (
+        <div style={{
+            background: 'rgba(255, 255, 255, 0.03)',
+            borderRadius: '12px',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            overflow: 'hidden',
+        }}>
+            {/* Header row - always visible */}
+            <div
+                onClick={() => hasMatches && setExpanded(!expanded)}
+                style={{
+                    padding: '14px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: hasMatches ? 'pointer' : 'default',
+                    transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => { if (hasMatches) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                    {/* Expand icon */}
+                    {hasMatches && (
+                        <span style={{
+                            fontSize: '10px',
+                            color: 'var(--text-muted)',
+                            transition: 'transform 0.2s',
+                            transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                            flexShrink: 0,
+                        }}>
+                            &#9654;
+                        </span>
+                    )}
+                    {/* Source tag */}
+                    <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        flexShrink: 0,
+                        background: match.source_type === 'library' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                        color: match.source_type === 'library' ? '#a78bfa' : '#60a5fa',
+                    }}>
+                        {match.source_type === 'library' ? (match.library_name || '文档库') : '批次内'}
+                    </span>
+                    {/* Filename */}
+                    <span style={{ fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {match.similar_document}
+                    </span>
+                    {/* Match count */}
+                    {hasMatches && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>
+                            ({match.matches.length} 处匹配)
+                        </span>
+                    )}
+                </div>
+                <span style={{
+                    fontWeight: 700,
+                    fontSize: '15px',
+                    flexShrink: 0,
+                    marginLeft: '12px',
+                    color: match.similarity > 0.7 ? '#f87171' : match.similarity > 0.4 ? '#facc15' : '#34d399',
+                }}>
+                    {(match.similarity * 100).toFixed(1)}%
+                </span>
+            </div>
+
+            {/* Expanded match details */}
+            {expanded && hasMatches && (
+                <div style={{
+                    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                    padding: '16px',
+                }}>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                        {match.matches.map((m, idx) => (
+                            <div key={idx} style={{
+                                background: 'rgba(255, 255, 255, 0.02)',
+                                borderRadius: '10px',
+                                border: '1px solid rgba(255, 255, 255, 0.04)',
+                                overflow: 'hidden',
+                            }}>
+                                {/* Match header */}
+                                <div style={{
+                                    padding: '8px 14px',
+                                    background: 'rgba(255, 255, 255, 0.02)',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                                }}>
+                                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                        第 {idx + 1} 处匹配
+                                    </span>
+                                    <span style={{
+                                        fontSize: '12px',
+                                        fontWeight: 600,
+                                        color: m.score > 0.7 ? '#f87171' : m.score > 0.4 ? '#facc15' : '#34d399',
+                                    }}>
+                                        相似度 {(m.score * 100).toFixed(1)}%
+                                    </span>
+                                </div>
+
+                                {/* Two-column comparison */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 0 }}>
+                                    {/* Left: source (uploaded doc) */}
+                                    <div style={{
+                                        padding: '12px 14px',
+                                        borderRight: '1px solid rgba(255, 255, 255, 0.04)',
+                                    }}>
+                                        <div style={{
+                                            fontSize: '11px',
+                                            color: '#818cf8',
+                                            fontWeight: 600,
+                                            marginBottom: '6px',
+                                        }}>
+                                            待检文档
+                                        </div>
+                                        <div style={{
+                                            fontSize: '13px',
+                                            lineHeight: '1.6',
+                                            color: 'var(--text-secondary)',
+                                            wordBreak: 'break-all',
+                                        }}>
+                                            {m.source_chunk}
+                                        </div>
+                                    </div>
+                                    {/* Right: target (matched doc) */}
+                                    <div style={{ padding: '12px 14px' }}>
+                                        <div style={{
+                                            fontSize: '11px',
+                                            color: '#f59e0b',
+                                            fontWeight: 600,
+                                            marginBottom: '6px',
+                                        }}>
+                                            匹配来源
+                                        </div>
+                                        <div style={{
+                                            fontSize: '13px',
+                                            lineHeight: '1.6',
+                                            color: 'var(--text-secondary)',
+                                            wordBreak: 'break-all',
+                                        }}>
+                                            {m.target_chunk}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const BatchResultsPage = () => {
     const { batchId } = useParams();
@@ -70,7 +238,6 @@ const BatchResultsPage = () => {
 
         fetchResults();
 
-        // 未完成时每3秒轮询
         const interval = setInterval(() => {
             fetchResults();
         }, 3000);
@@ -78,7 +245,6 @@ const BatchResultsPage = () => {
         return () => clearInterval(interval);
     }, [batchId]);
 
-    // 当批次完成后不需要继续轮询（通过状态判断在UI中提示）
     const isFinished = batchStatus === 'completed' || batchStatus === 'failed';
     const progressPercent = totalDocs > 0 ? Math.round((processedDocs / totalDocs) * 100) : 0;
     const statusInfo = statusMap[batchStatus] || statusMap.queued;
@@ -172,118 +338,134 @@ const BatchResultsPage = () => {
                     {/* Results */}
                     {results.length > 0 ? (
                         <div style={{ display: 'grid', gap: '20px' }}>
-                            {results.map((result) => (
-                                <div key={result.document_id} className="glass card-hover" style={{ padding: '28px', borderRadius: '20px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                        <h3 style={{ fontSize: '18px', fontWeight: 700 }}>
-                                            {result.filename}
-                                        </h3>
-                                        <span style={{
-                                            padding: '4px 10px',
-                                            borderRadius: '100px',
-                                            fontSize: '12px',
-                                            fontWeight: 600,
-                                            background: (statusMap[result.status] || statusMap.queued).bg,
-                                            color: (statusMap[result.status] || statusMap.queued).color,
-                                        }}>
-                                            {docStatusMap[result.status] || result.status}
-                                        </span>
-                                    </div>
+                            {results.map((result) => {
+                                // 计算该文档的最高相似度
+                                const maxSimilarity = result.plagiarism_analysis.length > 0
+                                    ? Math.max(...result.plagiarism_analysis.map(p => p.similarity))
+                                    : 0;
+                                const totalMatches = result.plagiarism_analysis.reduce(
+                                    (sum, p) => sum + (p.matches?.length || 0), 0
+                                );
 
-                                    {result.status === 'queued' && (
-                                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                                            等待分析...
-                                        </div>
-                                    )}
-
-                                    {result.status === 'processing' && (
-                                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                                            正在分析中...
-                                        </div>
-                                    )}
-
-                                    {(result.status === 'completed' || result.status === 'failed') && (
-                                        <>
-                                            {/* AI Analysis */}
-                                            {result.ai_analysis.provider && (
-                                                <div style={{
-                                                    padding: '16px',
-                                                    background: 'rgba(236, 72, 153, 0.05)',
-                                                    borderRadius: '12px',
-                                                    marginBottom: '16px',
-                                                    border: '1px solid rgba(236, 72, 153, 0.1)',
+                                return (
+                                    <div key={result.document_id} className="glass" style={{ padding: '28px', borderRadius: '20px' }}>
+                                        {/* Document header */}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>
+                                                    {result.filename}
+                                                </h3>
+                                                <span style={{
+                                                    padding: '4px 10px',
+                                                    borderRadius: '100px',
+                                                    fontSize: '12px',
+                                                    fontWeight: 600,
+                                                    background: (statusMap[result.status] || statusMap.queued).bg,
+                                                    color: (statusMap[result.status] || statusMap.queued).color,
                                                 }}>
-                                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>
-                                                        AI 生成检测
+                                                    {docStatusMap[result.status] || result.status}
+                                                </span>
+                                            </div>
+                                            {result.status === 'completed' && maxSimilarity > 0 && (
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{
+                                                        fontSize: '24px',
+                                                        fontWeight: 800,
+                                                        color: maxSimilarity > 0.7 ? '#f87171' : maxSimilarity > 0.4 ? '#facc15' : '#34d399',
+                                                    }}>
+                                                        {(maxSimilarity * 100).toFixed(1)}%
                                                     </div>
-                                                    <div style={{ display: 'flex', gap: '24px', fontSize: '14px' }}>
-                                                        <span>
-                                                            评分: <strong style={{ color: result.ai_analysis.score > 0.7 ? '#f87171' : '#34d399' }}>
-                                                                {(result.ai_analysis.score * 100).toFixed(1)}%
-                                                            </strong>
-                                                        </span>
-                                                        <span>
-                                                            判定: <strong style={{ color: result.ai_analysis.is_ai ? '#f87171' : '#34d399' }}>
-                                                                {result.ai_analysis.is_ai ? '疑似AI生成' : '人工撰写'}
-                                                            </strong>
-                                                        </span>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                                        最高相似度
                                                     </div>
                                                 </div>
                                             )}
+                                        </div>
 
-                                            {/* Plagiarism Analysis */}
-                                            {result.plagiarism_analysis.length > 0 ? (
-                                                <div>
-                                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px', fontWeight: 600 }}>
-                                                        查重匹配 ({result.plagiarism_analysis.length} 条)
+                                        {result.status === 'queued' && (
+                                            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                                                等待分析...
+                                            </div>
+                                        )}
+
+                                        {result.status === 'processing' && (
+                                            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                                                正在分析中...
+                                            </div>
+                                        )}
+
+                                        {(result.status === 'completed' || result.status === 'failed') && (
+                                            <>
+                                                {/* AI Analysis */}
+                                                {result.ai_analysis.provider && (
+                                                    <div style={{
+                                                        padding: '16px',
+                                                        background: 'rgba(236, 72, 153, 0.05)',
+                                                        borderRadius: '12px',
+                                                        marginBottom: '16px',
+                                                        border: '1px solid rgba(236, 72, 153, 0.1)',
+                                                    }}>
+                                                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>
+                                                            AI 生成检测
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: '24px', fontSize: '14px' }}>
+                                                            <span>
+                                                                评分: <strong style={{ color: result.ai_analysis.score > 0.7 ? '#f87171' : '#34d399' }}>
+                                                                    {(result.ai_analysis.score * 100).toFixed(1)}%
+                                                                </strong>
+                                                            </span>
+                                                            <span>
+                                                                判定: <strong style={{ color: result.ai_analysis.is_ai ? '#f87171' : '#34d399' }}>
+                                                                    {result.ai_analysis.is_ai ? '疑似AI生成' : '人工撰写'}
+                                                                </strong>
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <div style={{ display: 'grid', gap: '8px' }}>
-                                                        {result.plagiarism_analysis.map((match, i) => (
-                                                            <div key={i} style={{
-                                                                padding: '12px 16px',
-                                                                background: 'rgba(255, 255, 255, 0.03)',
-                                                                borderRadius: '10px',
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'center',
-                                                                border: '1px solid rgba(255, 255, 255, 0.05)',
-                                                            }}>
-                                                                <div style={{ fontSize: '14px' }}>
-                                                                    <span style={{
-                                                                        padding: '2px 6px',
-                                                                        borderRadius: '4px',
-                                                                        fontSize: '11px',
-                                                                        fontWeight: 600,
-                                                                        marginRight: '8px',
-                                                                        background: match.source_type === 'library' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                                                                        color: match.source_type === 'library' ? '#a78bfa' : '#60a5fa',
-                                                                    }}>
-                                                                        {match.source_type === 'library' ? (match.library_name || '文档库') : '批次内'}
-                                                                    </span>
-                                                                    {match.similar_document}
-                                                                </div>
-                                                                <span style={{
-                                                                    fontWeight: 700,
-                                                                    fontSize: '14px',
-                                                                    color: match.similarity > 0.7 ? '#f87171' : match.similarity > 0.4 ? '#facc15' : '#34d399',
-                                                                }}>
-                                                                    {(match.similarity * 100).toFixed(1)}%
+                                                )}
+
+                                                {/* Plagiarism Analysis */}
+                                                {result.plagiarism_analysis.length > 0 ? (
+                                                    <div>
+                                                        <div style={{
+                                                            fontSize: '13px',
+                                                            color: 'var(--text-secondary)',
+                                                            marginBottom: '12px',
+                                                            fontWeight: 600,
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                        }}>
+                                                            <span>
+                                                                查重匹配 ({result.plagiarism_analysis.length} 个相似文档)
+                                                            </span>
+                                                            {totalMatches > 0 && (
+                                                                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                                                    共 {totalMatches} 处相似段落，点击展开查看
                                                                 </span>
-                                                            </div>
-                                                        ))}
+                                                            )}
+                                                        </div>
+                                                        <div style={{ display: 'grid', gap: '8px' }}>
+                                                            {result.plagiarism_analysis.map((match, i) => (
+                                                                <MatchDetailPanel
+                                                                    key={i}
+                                                                    match={match}
+                                                                    docFilename={result.filename}
+                                                                />
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ) : (
-                                                result.status === 'completed' && !result.ai_analysis.provider && (
-                                                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                                                        未发现相似内容
-                                                    </div>
-                                                )
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            ))}
+                                                ) : (
+                                                    result.status === 'completed' && !result.ai_analysis.provider && (
+                                                        <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                                                            未发现相似内容
+                                                        </div>
+                                                    )
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
                         !isFinished && (
@@ -311,7 +493,6 @@ const BatchResultsPage = () => {
                 </>
             )}
 
-            {/* Pulse animation */}
             <style>{`
                 @keyframes pulse {
                     0%, 100% { opacity: 1; }
