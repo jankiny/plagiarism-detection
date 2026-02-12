@@ -83,11 +83,16 @@ async def _process_batch_async(batch_id: str, ai_threshold: float):
                         )
                         session.add(ai_detection_record)
 
-                # 查重检测（仅在 API 已配置时可用）
+                # 查重检测（支持纯文本模式，不强制依赖 API）
                 if analysis_type in ["plagiarism", "both", "mixed"]:
-                    if doc.text_content and embedding_service.is_available:
-                        embedding = embedding_service.generate_text_embedding(doc.text_content)
-                        doc.embedding = embedding
+                    if doc.text_content:
+                        # 如果 Embedding API 可用，生成向量（增强查重精度）
+                        if embedding_service.is_available:
+                            try:
+                                embedding = embedding_service.generate_text_embedding(doc.text_content)
+                                doc.embedding = embedding
+                            except Exception as emb_err:
+                                print(f"生成向量失败，将使用纯文本查重: {emb_err}")
 
                         # 根据 compare_mode 执行不同的对比策略
                         # 文档库对比
