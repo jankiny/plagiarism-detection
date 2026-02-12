@@ -53,15 +53,15 @@ async def _process_batch_async(batch_id: str, ai_threshold: float):
             )
             library_ids = [str(row[0]) for row in lib_result.fetchall()]
 
-        # 加载白名单指纹
+        # 加载白名单指纹（whitelist_ids 现在存储的是清单 ID）
         whitelist_fingerprints = []
         whitelist_ids = batch.whitelist_ids or []
         if whitelist_ids:
-            from app.models.whitelist import Whitelist
+            from app.models.whitelist import WhitelistItem
             import uuid as uuid_mod
-            wl_id_list = [uuid_mod.UUID(wid) if isinstance(wid, str) else wid for wid in whitelist_ids]
+            collection_id_list = [uuid_mod.UUID(wid) if isinstance(wid, str) else wid for wid in whitelist_ids]
             wl_result = await session.execute(
-                select(Whitelist).where(Whitelist.id.in_(wl_id_list))
+                select(WhitelistItem).where(WhitelistItem.collection_id.in_(collection_id_list))
             )
             wl_items = wl_result.scalars().all()
             for wl in wl_items:

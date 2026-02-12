@@ -8,7 +8,7 @@ from .document_library import DocumentLibrary
 from .library_document import LibraryDocument
 from .system_settings import SystemSettings
 from .user import User
-from .whitelist import Whitelist
+from .whitelist import WhitelistCollection, WhitelistItem
 
 __all__ = [
     "Base",
@@ -21,5 +21,6 @@ __all__ = [
     "LibraryDocument",
     "SystemSettings",
     "User",
-    "Whitelist",
+    "WhitelistCollection",
+    "WhitelistItem",
 ]

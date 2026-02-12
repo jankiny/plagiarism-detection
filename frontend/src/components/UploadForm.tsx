@@ -7,10 +7,11 @@ interface Library {
     document_count: number;
 }
 
-interface WhitelistItem {
+interface WhitelistCollection {
     id: string;
-    content: string;
-    label: string;
+    name: string;
+    description: string;
+    item_count: number;
 }
 
 const UploadForm = () => {
@@ -23,7 +24,7 @@ const UploadForm = () => {
     const [compareMode, setCompareMode] = useState('library');
     const [libraries, setLibraries] = useState<Library[]>([]);
     const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
-    const [whitelists, setWhitelists] = useState<WhitelistItem[]>([]);
+    const [whitelists, setWhitelists] = useState<WhitelistCollection[]>([]);
     const [selectedWhitelistIds, setSelectedWhitelistIds] = useState<string[]>([]);
 
     useEffect(() => {
@@ -262,7 +263,7 @@ const UploadForm = () => {
                                 白名单过滤
                             </label>
                             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                                选择白名单后，匹配到的模板内容（如封面、页眉页脚）将被自动跳过
+                                选择白名单清单后，清单中的所有条目（如封面、页眉页脚）将被自动跳过
                             </p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
                                 {whitelists.map(wl => (
@@ -289,9 +290,9 @@ const UploadForm = () => {
                                                 {selectedWhitelistIds.includes(wl.id) && <span style={{ color: 'white', fontSize: '12px' }}>&#10003;</span>}
                                             </div>
                                             <div style={{ minWidth: 0 }}>
-                                                <div style={{ fontWeight: 600, fontSize: '14px' }}>{wl.label || '未命名'}</div>
-                                                <div style={{ fontSize: '12px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {wl.content.slice(0, 30)}{wl.content.length > 30 ? '...' : ''}
+                                                <div style={{ fontWeight: 600, fontSize: '14px' }}>{wl.name}</div>
+                                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                                    {wl.item_count} 个条目{wl.description ? ` · ${wl.description}` : ''}
                                                 </div>
                                             </div>
                                         </div>
