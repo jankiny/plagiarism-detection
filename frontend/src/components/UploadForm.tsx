@@ -7,6 +7,12 @@ interface Library {
     document_count: number;
 }
 
+interface WhitelistItem {
+    id: string;
+    content: string;
+    label: string;
+}
+
 const UploadForm = () => {
     const [files, setFiles] = useState<File[]>([]);
     const [batchId, setBatchId] = useState<string | null>(null);
@@ -17,6 +23,8 @@ const UploadForm = () => {
     const [compareMode, setCompareMode] = useState('library');
     const [libraries, setLibraries] = useState<Library[]>([]);
     const [selectedLibraryIds, setSelectedLibraryIds] = useState<string[]>([]);
+    const [whitelists, setWhitelists] = useState<WhitelistItem[]>([]);
+    const [selectedWhitelistIds, setSelectedWhitelistIds] = useState<string[]>([]);
 
     useEffect(() => {
         const fetchLibraries = async () => {
@@ -33,7 +41,22 @@ const UploadForm = () => {
                 console.error('加载文档库列表失败', e);
             }
         };
+        const fetchWhitelists = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/v1/whitelist', {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setWhitelists(data.data || []);
+                }
+            } catch (e) {
+                console.error('加载白名单列表失败', e);
+            }
+        };
         fetchLibraries();
+        fetchWhitelists();
     }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,6 +65,12 @@ const UploadForm = () => {
 
     const toggleLibrary = (id: string) => {
         setSelectedLibraryIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const toggleWhitelist = (id: string) => {
+        setSelectedWhitelistIds(prev =>
             prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
         );
     };
@@ -69,6 +98,7 @@ const UploadForm = () => {
         };
         formData.append('options', JSON.stringify(options));
         formData.append('library_ids', JSON.stringify(selectedLibraryIds));
+        formData.append('whitelist_ids', JSON.stringify(selectedWhitelistIds));
         formData.append('compare_mode', compareMode);
 
         try {
@@ -222,6 +252,52 @@ const UploadForm = () => {
                                     <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>暂无可用的文档库，请联系版主创建。</p>
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Whitelist Selector */}
+                    {(analysisType === 'plagiarism' || analysisType === 'both') && whitelists.length > 0 && (
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '20px', fontSize: '16px', fontWeight: 700, color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                白名单过滤
+                            </label>
+                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                                选择白名单后，匹配到的模板内容（如封面、页眉页脚）将被自动跳过
+                            </p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+                                {whitelists.map(wl => (
+                                    <label key={wl.id} style={{ cursor: 'pointer' }}>
+                                        <div
+                                            onClick={() => toggleWhitelist(wl.id)}
+                                            className={`glass card-hover ${selectedWhitelistIds.includes(wl.id) ? 'active-card' : ''}`}
+                                            style={{
+                                                padding: '16px 20px',
+                                                borderRadius: '16px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '12px',
+                                                transition: 'var(--transition)',
+                                            }}
+                                        >
+                                            <div style={{
+                                                width: '20px', height: '20px', borderRadius: '6px',
+                                                border: selectedWhitelistIds.includes(wl.id) ? '2px solid #10b981' : '2px solid rgba(255,255,255,0.2)',
+                                                background: selectedWhitelistIds.includes(wl.id) ? '#10b981' : 'transparent',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                flexShrink: 0,
+                                            }}>
+                                                {selectedWhitelistIds.includes(wl.id) && <span style={{ color: 'white', fontSize: '12px' }}>&#10003;</span>}
+                                            </div>
+                                            <div style={{ minWidth: 0 }}>
+                                                <div style={{ fontWeight: 600, fontSize: '14px' }}>{wl.label || '未命名'}</div>
+                                                <div style={{ fontSize: '12px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {wl.content.slice(0, 30)}{wl.content.length > 30 ? '...' : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
                     )}
 

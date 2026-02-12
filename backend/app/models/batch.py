@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Integer, Float, DateTime, func, UUID, ForeignKey
+from sqlalchemy import Column, String, Integer, Float, DateTime, func, UUID, ForeignKey, JSON
 from .base import Base
 
 class Batch(Base):
@@ -15,4 +15,5 @@ class Batch(Base):
     ai_provider = Column(String, default="local")  # AI detection provider
     ai_threshold = Column(Float, default=0.5)  # AI detection threshold
     compare_mode = Column(String, default="library")  # library / internal / both
+    whitelist_ids = Column(JSON, default=list)  # 用户选择的白名单 ID 列表
     created_at = Column(DateTime(timezone=True), server_default=func.now())

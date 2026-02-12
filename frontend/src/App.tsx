@@ -11,6 +11,7 @@ import AdminPage from './components/AdminPage';
 import BatchResultsPage from './components/BatchResultsPage';
 import LibraryManagePage from './components/LibraryManagePage';
 import LibraryDetailPage from './components/LibraryDetailPage';
+import WhitelistManagePage from './components/WhitelistManagePage';
 import GuidePage from './components/GuidePage';
 import ProfilePage from './components/ProfilePage';
 import SettingsPage from './components/SettingsPage';
@@ -31,6 +32,7 @@ function App() {
             <Route path="profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="libraries" element={<ProtectedRoute requiredRole="moderator"><LibraryManagePage /></ProtectedRoute>} />
             <Route path="libraries/:libraryId" element={<ProtectedRoute requiredRole="moderator"><LibraryDetailPage /></ProtectedRoute>} />
+            <Route path="whitelist" element={<ProtectedRoute requiredRole="moderator"><WhitelistManagePage /></ProtectedRoute>} />
             <Route path="admin" element={<ProtectedRoute requiredRole="admin"><AdminPage /></ProtectedRoute>} />
             <Route path="settings" element={<ProtectedRoute requiredRole="admin"><SettingsPage /></ProtectedRoute>} />
             <Route path="batch/:batchId" element={<ProtectedRoute><BatchResultsPage /></ProtectedRoute>} />

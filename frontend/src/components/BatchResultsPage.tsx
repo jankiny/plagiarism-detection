@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const statusMap: Record<string, { label: string; bg: string; color: string }> = {
     queued: { label: '排队中', bg: 'rgba(234, 179, 8, 0.2)', color: '#facc15' },
@@ -47,6 +48,34 @@ interface DocResult {
 const MatchDetailPanel = ({ match }: { match: PlagiarismDetail }) => {
     const [expanded, setExpanded] = useState(false);
     const hasMatches = match.matches && match.matches.length > 0;
+    const { user } = useAuth();
+    const isMod = user?.role === 'moderator' || user?.role === 'admin';
+    const [whitelistingIdx, setWhitelistingIdx] = useState<number | null>(null);
+    const [whitelistLabel, setWhitelistLabel] = useState('');
+    const [whitelistSuccess, setWhitelistSuccess] = useState<number | null>(null);
+
+    const handleAddWhitelist = async (targetChunk: string, idx: number) => {
+        if (!whitelistLabel.trim()) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/v1/whitelist', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: targetChunk, label: whitelistLabel.trim() }),
+            });
+            if (res.ok) {
+                setWhitelistSuccess(idx);
+                setWhitelistingIdx(null);
+                setWhitelistLabel('');
+                setTimeout(() => setWhitelistSuccess(null), 3000);
+            }
+        } catch (e) {
+            console.error('加白失败', e);
+        }
+    };
 
     return (
         <div style={{
@@ -142,14 +171,73 @@ const MatchDetailPanel = ({ match }: { match: PlagiarismDetail }) => {
                                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                                         第 {idx + 1} 处匹配
                                     </span>
-                                    <span style={{
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                        color: m.score > 0.7 ? '#f87171' : m.score > 0.4 ? '#facc15' : '#34d399',
-                                    }}>
-                                        相似度 {(m.score * 100).toFixed(1)}%
-                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        {isMod && whitelistSuccess === idx && (
+                                            <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 600 }}>已加白</span>
+                                        )}
+                                        {isMod && whitelistingIdx !== idx && whitelistSuccess !== idx && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setWhitelistingIdx(idx); }}
+                                                style={{
+                                                    padding: '2px 8px', borderRadius: '4px', fontSize: '11px',
+                                                    fontWeight: 600, border: '1px solid rgba(16, 185, 129, 0.3)',
+                                                    background: 'rgba(16, 185, 129, 0.1)', color: '#34d399',
+                                                    cursor: 'pointer', transition: 'all 0.15s',
+                                                }}
+                                            >
+                                                加白
+                                            </button>
+                                        )}
+                                        <span style={{
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            color: m.score > 0.7 ? '#f87171' : m.score > 0.4 ? '#facc15' : '#34d399',
+                                        }}>
+                                            相似度 {(m.score * 100).toFixed(1)}%
+                                        </span>
+                                    </div>
                                 </div>
+
+                                {/* Whitelist label input */}
+                                {whitelistingIdx === idx && (
+                                    <div style={{
+                                        padding: '8px 14px', display: 'flex', gap: '8px', alignItems: 'center',
+                                        background: 'rgba(16, 185, 129, 0.05)',
+                                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                                    }}>
+                                        <input
+                                            type="text"
+                                            placeholder="输入标签（如：封面模板）"
+                                            value={whitelistLabel}
+                                            onChange={(e) => setWhitelistLabel(e.target.value)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{
+                                                flex: 1, padding: '6px 10px', borderRadius: '6px', fontSize: '12px',
+                                                border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)',
+                                                color: 'var(--text-primary)', outline: 'none',
+                                            }}
+                                        />
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleAddWhitelist(m.target_chunk, idx); }}
+                                            style={{
+                                                padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
+                                                border: 'none', background: '#10b981', color: 'white', cursor: 'pointer',
+                                            }}
+                                        >
+                                            确认
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setWhitelistingIdx(null); setWhitelistLabel(''); }}
+                                            style={{
+                                                padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
+                                                border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+                                                color: 'var(--text-muted)', cursor: 'pointer',
+                                            }}
+                                        >
+                                            取消
+                                        </button>
+                                    </div>
+                                )}
 
                                 {/* Two-column comparison */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 0 }}>

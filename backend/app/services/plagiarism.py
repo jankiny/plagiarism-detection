@@ -18,9 +18,20 @@ _executor = ThreadPoolExecutor(max_workers=4)
 
 
 class PlagiarismService:
-    def __init__(self, db_session: AsyncSession = None):
+    def __init__(self, db_session: AsyncSession = None, whitelist_fingerprints: List[Dict] = None):
         self.db_session = db_session
         self.embedding_service = EmbeddingService()
+        self.whitelist_fps = whitelist_fingerprints or []
+
+    def _is_whitelisted(self, chunk_text: str, threshold: float = 0.75) -> bool:
+        """检查文本片段是否匹配白名单"""
+        if not self.whitelist_fps:
+            return False
+        fp = self._precompute_chunk(chunk_text)
+        for wl_fp in self.whitelist_fps:
+            if self._similarity_from_fingerprints(fp, wl_fp) >= threshold:
+                return True
+        return False
 
     # ==================== 纯文本相似度算法（不依赖 API）====================
 
@@ -112,8 +123,7 @@ class PlagiarismService:
 
     # ==================== 第2层：倒排索引加速分块匹配 ====================
 
-    @classmethod
-    def text_chunk_compare(cls, text_a: str, text_b: str, chunk_size: int = 500, overlap: int = 50) -> Dict[str, Any]:
+    def text_chunk_compare(self, text_a: str, text_b: str, chunk_size: int = 500, overlap: int = 50) -> Dict[str, Any]:
         """纯文本分块对比，使用倒排索引加速匹配"""
         if not text_a or not text_b:
             return {"score": 0.0, "matches": []}
@@ -133,8 +143,8 @@ class PlagiarismService:
         chunks_b = chunk_text(text_b)
 
         # 第1层：预计算所有 chunk 的指纹（chunks_b 只算一次）
-        fps_a = [cls._precompute_chunk(c) for c in chunks_a]
-        fps_b = [cls._precompute_chunk(c) for c in chunks_b]
+        fps_a = [self._precompute_chunk(c) for c in chunks_a]
+        fps_b = [self._precompute_chunk(c) for c in chunks_b]
 
         # 第2层：构建倒排索引 bigram -> [chunk_b 索引列表]
         inverted_index = defaultdict(set)
@@ -164,12 +174,15 @@ class PlagiarismService:
                 continue
 
             for j in candidates_j:
-                score = cls._similarity_from_fingerprints(fp_a, fps_b[j])
+                score = self._similarity_from_fingerprints(fp_a, fps_b[j])
                 if score > best_score:
                     best_score = score
                     best_idx = j
 
             if best_score > 0.3:
+                # 白名单过滤：检查 source_chunk 或 target_chunk 是否匹配白名单
+                if self._is_whitelisted(chunks_a[i]) or self._is_whitelisted(chunks_b[best_idx]):
+                    continue
                 matches.append({
                     "source_chunk": chunks_a[i][:200],
                     "target_chunk": chunks_b[best_idx][:200],
@@ -233,6 +246,9 @@ class PlagiarismService:
                             best_match_idx = j
 
                     if best_match_score > 0.75:
+                        # 白名单过滤
+                        if self._is_whitelisted(chunks_a[i]) or self._is_whitelisted(chunks_b[best_match_idx]):
+                            continue
                         matches.append({
                             "source_chunk": chunks_a[i][:200],
                             "target_chunk": chunks_b[best_match_idx][:200],

@@ -61,6 +61,9 @@ const Navbar = () => {
               {user && (user.role === 'admin' || user.role === 'moderator') && (
                 <Link to="/libraries" className="btn-secondary" style={{ textDecoration: 'none', padding: '8px 16px', fontSize: '14px' }}>文档库</Link>
               )}
+              {user && (user.role === 'admin' || user.role === 'moderator') && (
+                <Link to="/whitelist" className="btn-secondary" style={{ textDecoration: 'none', padding: '8px 16px', fontSize: '14px' }}>白名单</Link>
+              )}
               {user && user.role === 'admin' && (
                 <Link to="/admin" className="btn-secondary" style={{ textDecoration: 'none', padding: '8px 16px', fontSize: '14px' }}>管理</Link>
               )}

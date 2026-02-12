@@ -33,6 +33,7 @@ async def analyze_content(
     text: Optional[str] = Form(default=None),
     options: str = Form(default='{"check_plagiarism": true, "check_ai": true}'),
     library_ids: str = Form(default='[]'),
+    whitelist_ids: str = Form(default='[]'),
     compare_mode: str = Form(default='library'),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(current_user),
@@ -48,6 +49,11 @@ async def analyze_content(
         parsed_library_ids = json.loads(library_ids)
     except Exception:
         parsed_library_ids = []
+
+    try:
+        parsed_whitelist_ids = json.loads(whitelist_ids)
+    except Exception:
+        parsed_whitelist_ids = []
 
     if compare_mode not in ["library", "internal", "both"]:
         compare_mode = "library"
@@ -76,6 +82,7 @@ async def analyze_content(
         analysis_type=analysis_type,
         ai_threshold=opts.ai_threshold,
         compare_mode=compare_mode,
+        whitelist_ids=parsed_whitelist_ids,
     )
     db.add(batch)
 
