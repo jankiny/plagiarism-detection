@@ -44,7 +44,7 @@ interface DocResult {
     plagiarism_analysis: PlagiarismDetail[];
 }
 
-const MatchDetailPanel = ({ match, docFilename }: { match: PlagiarismDetail; docFilename: string }) => {
+const MatchDetailPanel = ({ match }: { match: PlagiarismDetail }) => {
     const [expanded, setExpanded] = useState(false);
     const hasMatches = match.matches && match.matches.length > 0;
 
@@ -449,7 +449,6 @@ const BatchResultsPage = () => {
                                                                 <MatchDetailPanel
                                                                     key={i}
                                                                     match={match}
-                                                                    docFilename={result.filename}
                                                                 />
                                                             ))}
                                                         </div>
