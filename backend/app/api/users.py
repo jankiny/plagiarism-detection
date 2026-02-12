@@ -1,15 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.api.auth import fastapi_users, current_user
+from app.api.auth import fastapi_users, current_user, pwd_context
 from app.models.user import User
 from app.core.db import get_db
 from app.schemas import UserRead
-from passlib.context import CryptContext
+from passlib.exc import UnknownHashError
 from pydantic import BaseModel
 from typing import Optional
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 router = APIRouter()
 
@@ -36,11 +34,19 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
 ):
     """修改自己的密码（需验证旧密码）"""
-    if not pwd_context.verify(data.old_password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="旧密码不正确")
+    try:
+        if not pwd_context.verify(data.old_password, user.hashed_password):
+            raise HTTPException(status_code=400, detail="旧密码不正确")
+    except UnknownHashError:
+        # Stored hash is in an unexpected format (e.g., legacy/plaintext); ask user to reset.
+        raise HTTPException(
+            status_code=400,
+            detail="当前账户密码格式异常，请使用忘记密码或联系管理员重置",
+        )
 
     user.hashed_password = pwd_context.hash(data.new_password)
     await db.commit()
+    await db.refresh(user)
     return {"message": "密码修改成功"}
 
 
