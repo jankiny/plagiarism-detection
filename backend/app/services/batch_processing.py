@@ -1,27 +1,33 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-from app.core.config import settings
-from app.core.celery import app as celery_app
-from app.models.batch import Batch
-from app.models.document import Document
-from app.models.comparison import Comparison
-from app.models.batch_library import BatchLibrary
-from app.services.embedding import EmbeddingService
-from app.services.ai_detection import AIDetectionService
+from celery import shared_task
 import asyncio
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-embedding_service = EmbeddingService()
-ai_service = AIDetectionService()
-
-@celery_app.task
+@shared_task(name="app.services.batch_processing.process_batch")
 def process_batch(batch_id: str, ai_threshold: float = 0.5, **kwargs):
     """处理一批文档的查重和/或 AI 检测"""
     asyncio.run(_process_batch_async(batch_id, ai_threshold))
 
+
 async def _process_batch_async(batch_id: str, ai_threshold: float):
+    # 延迟导入，避免循环依赖和模块级初始化问题
+    from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import select
+    from app.core.config import settings
+    from app.models.batch import Batch
+    from app.models.document import Document
+    from app.models.comparison import Comparison
+    from app.models.batch_library import BatchLibrary
+    from app.services.embedding import EmbeddingService
+    from app.services.ai_detection import AIDetectionService
+    from app.services.plagiarism import PlagiarismService
+
+    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    embedding_service = EmbeddingService()
+    ai_service = AIDetectionService()
+
     async with SessionLocal() as session:
         batch = await session.get(Batch, batch_id)
         if not batch:
@@ -31,7 +37,6 @@ async def _process_batch_async(batch_id: str, ai_threshold: float):
         batch.status = "processing"
         await session.commit()
 
-        from sqlalchemy import select
         result = await session.execute(
             select(Document).where(Document.batch_id == batch_id)
         )
@@ -48,7 +53,6 @@ async def _process_batch_async(batch_id: str, ai_threshold: float):
             )
             library_ids = [str(row[0]) for row in lib_result.fetchall()]
 
-        from app.services.plagiarism import PlagiarismService
         plagiarism_service = PlagiarismService(session)
 
         for doc in documents:
@@ -122,9 +126,13 @@ async def _process_batch_async(batch_id: str, ai_threshold: float):
                 await session.commit()
             except Exception as e:
                 print(f"处理文档 {doc.id} 时出错: {e}")
+                import traceback
+                traceback.print_exc()
                 doc.status = "failed"
                 await session.commit()
 
         batch.status = "completed"
         batch.processed_docs = len([d for d in documents if d.status == "completed"])
         await session.commit()
+
+    await engine.dispose()
