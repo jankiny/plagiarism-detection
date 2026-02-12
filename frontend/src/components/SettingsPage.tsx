@@ -103,10 +103,11 @@ const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8 text-gradient-primary">系统设置</h1>
+    <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="flex flex-col space-y-8">
+        <h1 className="text-3xl font-bold text-gradient-primary">系统设置</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
         {/* 平台基本信息区 */}
         <section className="glass p-6 rounded-lg">
           <h2 className="text-xl font-semibold text-white mb-4 border-b border-white/20 pb-2">平台基本信息区</h2>
