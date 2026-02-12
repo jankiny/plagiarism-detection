@@ -117,6 +117,42 @@ const AdminPage = () => {
         }
     };
 
+    const handleReactivate = async (userId: string) => {
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/reactivate`, {
+                method: 'POST', headers,
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.detail || '启用失败');
+            }
+            await fetchUsers();
+            await fetchStats();
+        } catch (e: any) {
+            alert(e.message);
+        }
+    };
+
+    const handleDeleteUser = async (user: UserItem) => {
+        const confirmed = confirm(`⚠️ 确定要永久删除用户 ${user.email} 吗？\n\n此操作不可恢复，用户的所有数据将被清除。`);
+        if (!confirmed) return;
+        const doubleConfirm = confirm(`再次确认：永久删除 ${user.email}？`);
+        if (!doubleConfirm) return;
+        try {
+            const res = await fetch(`/api/admin/users/${user.id}/permanent`, {
+                method: 'DELETE', headers,
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.detail || '删除失败');
+            }
+            await fetchUsers();
+            await fetchStats();
+        } catch (e: any) {
+            alert(e.message);
+        }
+    };
+
     const handleResetPassword = async () => {
         if (!resetPasswordUser || !newPassword) return;
         setResetting(true);
@@ -263,8 +299,11 @@ const AdminPage = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.map(u => (
-                                    <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                {[...users].sort((a, b) => {
+                                    if (a.is_active === b.is_active) return 0;
+                                    return a.is_active ? -1 : 1;
+                                }).map(u => (
+                                    <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', opacity: u.is_active ? 1 : 0.6 }}>
                                         <td style={{ padding: '16px 20px', fontSize: '14px', fontWeight: 600 }}>{u.email}</td>
                                         <td style={{ padding: '16px 20px', fontSize: '14px', color: 'var(--text-secondary)' }}>{u.display_name || '-'}</td>
                                         <td style={{ padding: '16px 20px' }}>
@@ -292,7 +331,7 @@ const AdminPage = () => {
                                             </span>
                                         </td>
                                         <td style={{ padding: '16px 20px' }}>
-                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                                 <button
                                                     onClick={() => { setResetPasswordUser(u); setNewPassword(''); }}
                                                     style={{
@@ -313,6 +352,30 @@ const AdminPage = () => {
                                                         }}
                                                     >
                                                         停用
+                                                    </button>
+                                                )}
+                                                {!u.is_active && (
+                                                    <button
+                                                        onClick={() => handleReactivate(u.id)}
+                                                        style={{
+                                                            padding: '6px 12px', fontSize: '12px', borderRadius: '6px',
+                                                            background: 'rgba(16,185,129,0.1)', color: '#10b981',
+                                                            border: 'none', cursor: 'pointer', fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        启用
+                                                    </button>
+                                                )}
+                                                {u.role !== 'admin' && (
+                                                    <button
+                                                        onClick={() => handleDeleteUser(u)}
+                                                        style={{
+                                                            padding: '6px 12px', fontSize: '12px', borderRadius: '6px',
+                                                            background: 'rgba(239,68,68,0.05)', color: '#ef4444',
+                                                            border: '1px dashed rgba(239,68,68,0.3)', cursor: 'pointer', fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        删除
                                                     </button>
                                                 )}
                                             </div>

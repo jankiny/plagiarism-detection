@@ -168,6 +168,58 @@ async def delete_user(
     return {"message": f"用户 {user.email} 已停用"}
 
 
+@router.post("/users/{user_id}/reactivate", response_model=dict)
+async def reactivate_user(
+    user_id: UUID,
+    current_user: User = Depends(admin_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """重新启用已停用的用户"""
+    result = await db.execute(select(User).filter(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="未找到用户")
+
+    if user.is_active:
+        raise HTTPException(status_code=400, detail="该用户已处于活跃状态")
+
+    await db.execute(
+        update(User)
+        .where(User.id == user_id)
+        .values(is_active=True)
+    )
+    await db.commit()
+
+    return {"message": f"用户 {user.email} 已重新启用"}
+
+
+@router.delete("/users/{user_id}/permanent", response_model=dict)
+async def permanently_delete_user(
+    user_id: UUID,
+    current_user: User = Depends(admin_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """永久删除用户及其所有数据（不可恢复）"""
+    result = await db.execute(select(User).filter(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="未找到用户")
+
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="管理员不能删除自己")
+
+    if user.role == "admin":
+        raise HTTPException(status_code=400, detail="不能删除管理员账户")
+
+    email = user.email
+    await db.delete(user)
+    await db.commit()
+
+    return {"message": f"用户 {email} 已被永久删除"}
+
+
 @router.put("/users/{user_id}/reset-password", response_model=dict)
 async def reset_user_password(
     user_id: UUID,
