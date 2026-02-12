@@ -53,12 +53,43 @@ const MatchDetailPanel = ({ match }: { match: PlagiarismDetail }) => {
     const [whitelistingIdx, setWhitelistingIdx] = useState<number | null>(null);
     const [whitelistLabel, setWhitelistLabel] = useState('');
     const [whitelistSuccess, setWhitelistSuccess] = useState<number | null>(null);
+    const [collections, setCollections] = useState<{ id: string; name: string; item_count: number }[]>([]);
+    const [selectedCollectionId, setSelectedCollectionId] = useState('');
+    const [collectionsLoaded, setCollectionsLoaded] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
-    const handleAddWhitelist = async (targetChunk: string, idx: number) => {
-        if (!whitelistLabel.trim()) return;
+    const fetchCollections = async () => {
+        if (collectionsLoaded) return;
         try {
             const token = localStorage.getItem('token');
             const res = await fetch('/api/v1/whitelist', {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const list = data.data || [];
+                setCollections(list);
+                if (list.length > 0) setSelectedCollectionId(list[0].id);
+            }
+        } catch (e) { console.error('加载白名单清单失败', e); }
+        finally { setCollectionsLoaded(true); }
+    };
+
+    const handleStartWhitelist = async (idx: number) => {
+        setWhitelistingIdx(idx);
+        setWhitelistLabel('');
+        await fetchCollections();
+    };
+
+    const handleAddWhitelist = async (targetChunk: string, idx: number) => {
+        if (!selectedCollectionId) {
+            alert('请先选择一个白名单清单');
+            return;
+        }
+        try {
+            setSubmitting(true);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/v1/whitelist/${selectedCollectionId}/items`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -70,10 +101,17 @@ const MatchDetailPanel = ({ match }: { match: PlagiarismDetail }) => {
                 setWhitelistSuccess(idx);
                 setWhitelistingIdx(null);
                 setWhitelistLabel('');
+                setCollectionsLoaded(false); // 刷新清单数据
                 setTimeout(() => setWhitelistSuccess(null), 3000);
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert(err.detail || '加白失败');
             }
         } catch (e) {
             console.error('加白失败', e);
+            alert('加白失败，请重试');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -177,7 +215,7 @@ const MatchDetailPanel = ({ match }: { match: PlagiarismDetail }) => {
                                         )}
                                         {isMod && whitelistingIdx !== idx && whitelistSuccess !== idx && (
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); setWhitelistingIdx(idx); }}
+                                                onClick={(e) => { e.stopPropagation(); handleStartWhitelist(idx); }}
                                                 style={{
                                                     padding: '2px 8px', borderRadius: '4px', fontSize: '11px',
                                                     fontWeight: 600, border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -198,44 +236,70 @@ const MatchDetailPanel = ({ match }: { match: PlagiarismDetail }) => {
                                     </div>
                                 </div>
 
-                                {/* Whitelist label input */}
+                                {/* Whitelist collection + label input */}
                                 {whitelistingIdx === idx && (
                                     <div style={{
-                                        padding: '8px 14px', display: 'flex', gap: '8px', alignItems: 'center',
+                                        padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px',
                                         background: 'rgba(16, 185, 129, 0.05)',
                                         borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
                                     }}>
-                                        <input
-                                            type="text"
-                                            placeholder="输入标签（如：封面模板）"
-                                            value={whitelistLabel}
-                                            onChange={(e) => setWhitelistLabel(e.target.value)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            style={{
-                                                flex: 1, padding: '6px 10px', borderRadius: '6px', fontSize: '12px',
-                                                border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)',
-                                                color: 'var(--text-primary)', outline: 'none',
-                                            }}
-                                        />
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleAddWhitelist(m.target_chunk, idx); }}
-                                            style={{
-                                                padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
-                                                border: 'none', background: '#10b981', color: 'white', cursor: 'pointer',
-                                            }}
-                                        >
-                                            确认
-                                        </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setWhitelistingIdx(null); setWhitelistLabel(''); }}
-                                            style={{
-                                                padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
-                                                border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
-                                                color: 'var(--text-muted)', cursor: 'pointer',
-                                            }}
-                                        >
-                                            取消
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', flexShrink: 0, fontWeight: 600 }}>清单:</span>
+                                            {collections.length > 0 ? (
+                                                <select
+                                                    value={selectedCollectionId}
+                                                    onChange={(e) => { e.stopPropagation(); setSelectedCollectionId(e.target.value); }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    style={{
+                                                        flex: 1, padding: '6px 10px', borderRadius: '6px', fontSize: '12px',
+                                                        border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)',
+                                                        color: 'var(--text-primary)', outline: 'none', cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    {collections.map(c => (
+                                                        <option key={c.id} value={c.id}>{c.name} ({c.item_count} 条)</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <span style={{ fontSize: '12px', color: '#f87171' }}>暂无清单，请先在白名单管理中创建</span>
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', flexShrink: 0, fontWeight: 600 }}>标签:</span>
+                                            <input
+                                                type="text"
+                                                placeholder="可选，如：封面模板"
+                                                value={whitelistLabel}
+                                                onChange={(e) => setWhitelistLabel(e.target.value)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                style={{
+                                                    flex: 1, padding: '6px 10px', borderRadius: '6px', fontSize: '12px',
+                                                    border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)',
+                                                    color: 'var(--text-primary)', outline: 'none',
+                                                }}
+                                            />
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleAddWhitelist(m.target_chunk, idx); }}
+                                                disabled={submitting || !selectedCollectionId}
+                                                style={{
+                                                    padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
+                                                    border: 'none', background: '#10b981', color: 'white', cursor: 'pointer',
+                                                    opacity: submitting || !selectedCollectionId ? 0.5 : 1,
+                                                }}
+                                            >
+                                                {submitting ? '...' : '确认'}
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setWhitelistingIdx(null); setWhitelistLabel(''); }}
+                                                style={{
+                                                    padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
+                                                    border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+                                                    color: 'var(--text-muted)', cursor: 'pointer',
+                                                }}
+                                            >
+                                                取消
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
