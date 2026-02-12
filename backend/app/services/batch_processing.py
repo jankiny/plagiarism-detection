@@ -1,7 +1,7 @@
-from celery import Celery
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
+from app.core.celery import app as celery_app
 from app.models.batch import Batch
 from app.models.document import Document
 from app.models.comparison import Comparison
@@ -10,16 +10,13 @@ from app.services.embedding import EmbeddingService
 from app.services.ai_detection import AIDetectionService
 import asyncio
 
-celery = Celery(__name__)
-celery.config_from_object("app.core.celery")
-
 engine = create_async_engine(settings.DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 embedding_service = EmbeddingService()
 ai_service = AIDetectionService()
 
-@celery.task
+@celery_app.task
 def process_batch(batch_id: str, ai_threshold: float = 0.5, **kwargs):
     """处理一批文档的查重和/或 AI 检测"""
     asyncio.run(_process_batch_async(batch_id, ai_threshold))

@@ -21,7 +21,12 @@ const ProtectedRoute = ({ children, requiredRole = 'user' }: ProtectedRouteProps
     return <Navigate to="/login" replace />;
   }
 
-  const { isAuthenticated, token, user } = authContext;
+  const { isAuthenticated, loading, token, user } = authContext;
+
+  // 认证状态加载中，显示空白或加载提示，不跳转
+  if (loading) {
+    return null;
+  }
 
   if (!isAuthenticated || !token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
