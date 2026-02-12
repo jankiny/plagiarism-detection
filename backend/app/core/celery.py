@@ -4,7 +4,6 @@ from app.core.config import settings
 
 app = Celery('plagiarism_detection')
 
-# Configure Celery with explicit settings
 app.conf.update(
     broker_url=settings.CELERY_BROKER_URL,
     result_backend=settings.CELERY_RESULT_BACKEND,
@@ -13,9 +12,7 @@ app.conf.update(
     result_serializer='json',
     timezone='UTC',
     enable_utc=True,
+    broker_connection_retry_on_startup=True,
+    # 显式声明任务模块列表
+    include=['app.services.batch_processing'],
 )
-
-
-
-# Import tasks
-app.autodiscover_tasks(['app.services'])
