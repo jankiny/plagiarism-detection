@@ -10,6 +10,9 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+    # 数据盘持久化示例：把宿主机数据目录挂到容器（将 /mnt/data 替换为实际数据盘路径）
+    # volumes:
+    #   - /mnt/data/plagiarism/pgdata:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
@@ -18,6 +21,9 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    # 如果需要持久化 Redis（可选），改为绑定宿主机目录
+    # volumes:
+    #   - /mnt/data/plagiarism/redis:/data
 
   minio:
     image: minio/minio
@@ -31,6 +37,9 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
+    # 持久化对象存储：挂载宿主机数据盘
+    # volumes:
+    #   - /mnt/data/plagiarism/minio:/data
 
   frontend:
     build:
