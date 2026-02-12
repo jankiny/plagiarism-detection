@@ -103,17 +103,17 @@ const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <div className="flex flex-col space-y-8">
-        <h1 className="text-3xl font-bold text-gradient-primary">系统设置</h1>
+    <div className="container" style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        <h1 className="text-gradient-primary" style={{ fontSize: '2rem', fontWeight: 700 }}>系统设置</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '32px' }}>
         {/* 平台基本信息区 */}
-        <section className="glass p-6 rounded-lg">
-          <h2 className="text-xl font-semibold text-white mb-4 border-b border-white/20 pb-2">平台基本信息区</h2>
-          <div className="grid gap-4">
+        <section className="glass" style={{ padding: '24px', borderRadius: '16px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'white', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '8px' }}>平台基本信息区</h2>
+          <div style={{ display: 'grid', gap: '16px' }}>
             <div>
-              <label className="block text-gray-200 mb-2">平台名称</label>
+              <label style={{ display: 'block', color: '#e5e7eb', marginBottom: '8px' }}>平台名称</label>
               <input
                 type="text"
                 name="system_name"
@@ -126,11 +126,11 @@ const SettingsPage: React.FC = () => {
         </section>
 
         {/* AI 服务配置区 */}
-        <section className="glass p-6 rounded-lg">
-          <h2 className="text-xl font-semibold text-white mb-4 border-b border-white/20 pb-2">AI 服务配置区</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <label className="block text-gray-200 mb-2">AI API 地址</label>
+        <section className="glass" style={{ padding: '24px', borderRadius: '16px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'white', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '8px' }}>AI 服务配置区</h2>
+          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', color: '#e5e7eb', marginBottom: '8px' }}>AI API 地址</label>
               <input
                 type="text"
                 name="ai_api_base_url"
@@ -140,8 +140,8 @@ const SettingsPage: React.FC = () => {
                 className="w-full"
               />
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-gray-200 mb-2">AI API 密钥</label>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', color: '#e5e7eb', marginBottom: '8px' }}>AI API 密钥</label>
               <input
                 type="password"
                 name="ai_api_key"
@@ -152,7 +152,7 @@ const SettingsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-gray-200 mb-2">聊天模型名称</label>
+              <label style={{ display: 'block', color: '#e5e7eb', marginBottom: '8px' }}>聊天模型名称</label>
               <input
                 type="text"
                 name="ai_chat_model"
@@ -163,7 +163,7 @@ const SettingsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-gray-200 mb-2">Embedding 模型名称</label>
+              <label style={{ display: 'block', color: '#e5e7eb', marginBottom: '8px' }}>Embedding 模型名称</label>
               <input
                 type="text"
                 name="ai_embedding_model"
@@ -177,11 +177,11 @@ const SettingsPage: React.FC = () => {
         </section>
 
         {/* 查重参数配置区 */}
-        <section className="glass p-6 rounded-lg">
-          <h2 className="text-xl font-semibold text-white mb-4 border-b border-white/20 pb-2">查重参数配置区</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <label className="block text-gray-200 mb-2">
+        <section className="glass" style={{ padding: '24px', borderRadius: '16px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'white', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '8px' }}>查重参数配置区</h2>
+          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', color: '#e5e7eb', marginBottom: '8px' }}>
                 相似度阈值: {settings.similarity_threshold}
               </label>
               <input
@@ -192,17 +192,16 @@ const SettingsPage: React.FC = () => {
                 step="0.01"
                 value={settings.similarity_threshold}
                 onChange={handleChange}
-                style={{ accentColor: 'var(--primary)' }}
-                className="w-full"
+                style={{ accentColor: 'var(--primary)', width: '100%' }}
               />
-              <div className="flex justify-between text-xs text-gray-300">
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#d1d5db', marginTop: '4px' }}>
                 <span>0.0</span>
                 <span>0.5</span>
                 <span>1.0</span>
               </div>
             </div>
             <div>
-              <label className="block text-gray-200 mb-2">最大上传文件大小 (MB)</label>
+              <label style={{ display: 'block', color: '#e5e7eb', marginBottom: '8px' }}>最大上传文件大小 (MB)</label>
               <input
                 type="number"
                 name="max_upload_size_mb"
@@ -213,7 +212,7 @@ const SettingsPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-gray-200 mb-2">单次最大文件数</label>
+              <label style={{ display: 'block', color: '#e5e7eb', marginBottom: '8px' }}>单次最大文件数</label>
               <input
                 type="number"
                 name="max_files_per_batch"
@@ -227,12 +226,18 @@ const SettingsPage: React.FC = () => {
         </section>
 
         {message && (
-          <div className={`p-4 rounded ${message.type === 'success' ? 'bg-green-500/20 text-green-200 border border-green-500/30' : 'bg-red-500/20 text-red-200 border border-red-500/30'}`}>
+          <div style={{
+            padding: '16px',
+            borderRadius: '4px',
+            backgroundColor: message.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+            color: message.type === 'success' ? '#bbf7d0' : '#fecaca',
+            border: message.type === 'success' ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
+          }}>
             {message.text}
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button
             type="submit"
             disabled={saving}

@@ -53,8 +53,10 @@ class SettingsService:
             self.db.add(db_settings)
 
         for key, value in updates.items():
-            if key == "ai_api_key" and value == "":
-                continue  # 空字符串不更新密钥
+            if key == "ai_api_key":
+                # Skip if empty or if it looks like a masked key (contains asterisks)
+                if not value or "****" in str(value):
+                    continue
             if hasattr(db_settings, key):
                 setattr(db_settings, key, value)
 
