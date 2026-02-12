@@ -83,8 +83,15 @@ chmod +x 2_import_and_deploy.sh
 
 脚本会自动：
 1. 验证所有镜像 tar 文件完整
-2. `docker load` 导入所有镜像
-3. 使用 `docker-compose.offline.yml` 启动全部服务
+2. `docker load` 导入镜像（**已存在的镜像会自动跳过，避免重复加载**）
+3. 创建数据持久化目录 `/home/tzdl/data/plagiarism/{pgdata,redis,minio}`
+4. 使用 `docker-compose.offline.yml` 启动全部服务
+
+如需强制重新加载所有镜像（例如更新版本后）：
+
+```bash
+./2_import_and_deploy.sh --force
+```
 
 #### 3.3 验证部署
 
@@ -148,17 +155,15 @@ docker compose -f docker-compose.offline.yml up -d
 
 ## 数据持久化
 
-默认使用 Docker named volumes 存储数据。如需挂载宿主机目录（推荐生产环境），编辑 `docker-compose.offline.yml`：
+所有数据统一存放在宿主机 `/home/tzdl/data/plagiarism/` 目录下：
 
-```yaml
-db:
-  volumes:
-    - /mnt/data/plagiarism/pgdata:/var/lib/postgresql/data
+| 服务 | 宿主机路径 |
+|------|----------|
+| PostgreSQL | `/home/tzdl/data/plagiarism/pgdata` |
+| Redis | `/home/tzdl/data/plagiarism/redis` |
+| MinIO | `/home/tzdl/data/plagiarism/minio` |
 
-minio:
-  volumes:
-    - /mnt/data/plagiarism/minio:/data
-```
+部署脚本会自动创建这些目录。如需修改路径，编辑 `docker-compose.offline.yml` 中对应的 `volumes` 挂载点即可。
 
 ## 常见问题
 

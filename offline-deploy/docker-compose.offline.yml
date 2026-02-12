@@ -15,10 +15,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    # 如需挂载宿主机数据盘，取消以下注释并注释上面的 volumes
-    # volumes:
-    #   - /mnt/data/plagiarism/pgdata:/var/lib/postgresql/data
+      - /home/tzdl/data/plagiarism/pgdata:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
@@ -27,7 +24,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - /home/tzdl/data/plagiarism/redis:/data
 
   minio:
     image: minio/minio:latest
@@ -41,7 +38,7 @@ services:
       - MINIO_ROOT_PASSWORD=minioadmin
     command: server /data --console-address ":9001"
     volumes:
-      - minio_data:/data
+      - /home/tzdl/data/plagiarism/minio:/data
 
   frontend:
     image: plagiarism-frontend:latest
@@ -87,7 +84,7 @@ services:
     env_file:
       - ./.env.docker
 
-volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
+# 数据目录统一挂载到 /home/tzdl/data/plagiarism/
+# pgdata  - PostgreSQL 数据
+# redis   - Redis 持久化
+# minio   - MinIO 对象存储

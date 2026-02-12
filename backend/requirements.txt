@@ -26,6 +26,9 @@ kombu==5.4.2
 # AI / Embedding (OpenAI-compatible API)
 openai==1.51.0
 
+# Numpy (pinned <2.0 to avoid CPU baseline optimization errors on older CPUs)
+numpy<2.0.0
+
 # Pydantic
 pydantic==2.9.2
 pydantic-settings==2.5.2

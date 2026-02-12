@@ -8,6 +8,13 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 IMAGE_DIR="$SCRIPT_DIR/images"
+FORCE_RELOAD=false
+
+# 支持 --force 参数强制重新加载所有镜像
+if [ "$1" = "--force" ] || [ "$1" = "-f" ]; then
+  FORCE_RELOAD=true
+  echo "[提示] 强制模式：将重新加载所有镜像"
+fi
 
 echo "======================================"
 echo "  离线部署 - 第2步：导入镜像 & 启动服务"
@@ -33,24 +40,30 @@ for img in "${REQUIRED_IMAGES[@]}"; do
   echo "  ✓ $img"
 done
 
-# ---------- 2. 导入镜像 ----------
+# ---------- 2. 导入镜像（跳过已存在的） ----------
 echo ""
-echo "[导入] 正在加载 Docker 镜像 (可能需要几分钟)..."
+echo "[导入] 正在加载 Docker 镜像..."
 
-echo "  → 加载 pgvector..."
-docker load -i "$IMAGE_DIR/pgvector.tar"
+load_if_needed() {
+  local tar_file="$1"
+  local image_name="$2"
 
-echo "  → 加载 redis..."
-docker load -i "$IMAGE_DIR/redis.tar"
+  if [ "$FORCE_RELOAD" = true ]; then
+    echo "  → 强制加载 $tar_file..."
+    docker load -i "$IMAGE_DIR/$tar_file"
+  elif docker image inspect "$image_name" &>/dev/null; then
+    echo "  ⊘ 跳过 $image_name（已存在）"
+  else
+    echo "  → 加载 $tar_file..."
+    docker load -i "$IMAGE_DIR/$tar_file"
+  fi
+}
 
-echo "  → 加载 minio..."
-docker load -i "$IMAGE_DIR/minio.tar"
-
-echo "  → 加载 plagiarism-api..."
-docker load -i "$IMAGE_DIR/plagiarism-api.tar"
-
-echo "  → 加载 plagiarism-frontend..."
-docker load -i "$IMAGE_DIR/plagiarism-frontend.tar"
+load_if_needed "pgvector.tar" "ankane/pgvector:v0.5.1"
+load_if_needed "redis.tar" "redis:7-alpine"
+load_if_needed "minio.tar" "minio/minio:latest"
+load_if_needed "plagiarism-api.tar" "plagiarism-api:latest"
+load_if_needed "plagiarism-frontend.tar" "plagiarism-frontend:latest"
 
 echo ""
 echo "[验证] 已加载的镜像:"
@@ -91,7 +104,16 @@ ENVEOF
   echo "  文件位置: $ENV_FILE"
 fi
 
-# ---------- 4. 启动服务 ----------
+# ---------- 4. 创建数据目录 ----------
+echo ""
+echo "[准备] 创建数据持久化目录..."
+DATA_BASE="/home/tzdl/data/plagiarism"
+mkdir -p "$DATA_BASE/pgdata"
+mkdir -p "$DATA_BASE/redis"
+mkdir -p "$DATA_BASE/minio"
+echo "  ✓ 数据目录: $DATA_BASE/{pgdata,redis,minio}"
+
+# ---------- 5. 启动服务 ----------
 echo ""
 echo "[启动] 使用 docker compose 启动所有服务..."
 cd "$SCRIPT_DIR"
