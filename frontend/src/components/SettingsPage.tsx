@@ -104,7 +104,7 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold text-white mb-8">系统设置</h1>
+      <h1 className="text-3xl font-bold mb-8 text-gradient-primary">系统设置</h1>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* 平台基本信息区 */}
@@ -118,7 +118,7 @@ const SettingsPage: React.FC = () => {
                 name="system_name"
                 value={settings.system_name}
                 onChange={handleChange}
-                className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder-white/30"
+                className="w-full"
               />
             </div>
           </div>
@@ -136,7 +136,7 @@ const SettingsPage: React.FC = () => {
                 value={settings.ai_api_base_url}
                 onChange={handleChange}
                 placeholder="https://api.openai.com/v1"
-                className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder-white/30"
+                className="w-full"
               />
             </div>
             <div className="md:col-span-2">
@@ -147,7 +147,7 @@ const SettingsPage: React.FC = () => {
                 value={settings.ai_api_key}
                 onChange={handleChange}
                 placeholder="sk-..."
-                className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder-white/30"
+                className="w-full"
               />
             </div>
             <div>
@@ -158,7 +158,7 @@ const SettingsPage: React.FC = () => {
                 value={settings.ai_chat_model}
                 onChange={handleChange}
                 placeholder="gpt-3.5-turbo"
-                className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder-white/30"
+                className="w-full"
               />
             </div>
             <div>
@@ -169,7 +169,7 @@ const SettingsPage: React.FC = () => {
                 value={settings.ai_embedding_model}
                 onChange={handleChange}
                 placeholder="text-embedding-3-small"
-                className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder-white/30"
+                className="w-full"
               />
             </div>
           </div>
@@ -191,7 +191,8 @@ const SettingsPage: React.FC = () => {
                 step="0.01"
                 value={settings.similarity_threshold}
                 onChange={handleChange}
-                className="w-full accent-blue-500"
+                style={{ accentColor: 'var(--primary)' }}
+                className="w-full"
               />
               <div className="flex justify-between text-xs text-gray-300">
                 <span>0.0</span>
@@ -207,7 +208,7 @@ const SettingsPage: React.FC = () => {
                 value={settings.max_upload_size_mb}
                 onChange={handleChange}
                 min="1"
-                className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder-white/30"
+                className="w-full"
               />
             </div>
             <div>
@@ -218,7 +219,7 @@ const SettingsPage: React.FC = () => {
                 value={settings.max_files_per_batch}
                 onChange={handleChange}
                 min="1"
-                className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder-white/30"
+                className="w-full"
               />
             </div>
           </div>
@@ -234,7 +235,7 @@ const SettingsPage: React.FC = () => {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            className="btn-primary"
           >
             {saving ? '保存中...' : '保存设置'}
           </button>
