@@ -296,4 +296,10 @@ async def get_batch_results(
             "plagiarism_analysis": plagiarism_details,
         })
 
-    return {"status": "ok", "data": results}
+    return {
+        "status": "ok",
+        "data": results,
+        "batch_status": batch.status,
+        "total_docs": batch.total_docs or 0,
+        "processed_docs": batch.processed_docs or 0,
+    }

@@ -14,35 +14,47 @@ interface Batch {
     analysis_type: string;
 }
 
+const statusMap: Record<string, { label: string; bg: string; color: string }> = {
+    queued: { label: '排队中', bg: 'rgba(234, 179, 8, 0.2)', color: '#facc15' },
+    processing: { label: '处理中', bg: 'rgba(99, 102, 241, 0.2)', color: '#818cf8' },
+    completed: { label: '已完成', bg: 'rgba(16, 185, 129, 0.2)', color: '#34d399' },
+    failed: { label: '失败', bg: 'rgba(239, 68, 68, 0.2)', color: '#f87171' },
+};
+
 const DashboardPage = () => {
     const [metrics, setMetrics] = useState<Metrics | null>(null);
     const [batches, setBatches] = useState<Batch[]>([]);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const headers = { 'Authorization': `Bearer ${token}` };
+    const fetchData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const headers = { 'Authorization': `Bearer ${token}` };
 
-                // Fetch Metrics
-                const metricsRes = await fetch('/api/v1/users/me/dashboard', { headers });
-                if (!metricsRes.ok) throw new Error('获取数据失败');
-                const metricsData = await metricsRes.json();
-                setMetrics(metricsData.data);
+            const metricsRes = await fetch('/api/v1/users/me/dashboard', { headers });
+            if (!metricsRes.ok) throw new Error('获取数据失败');
+            const metricsData = await metricsRes.json();
+            setMetrics(metricsData.data);
 
-                // Fetch Batches
-                const batchesRes = await fetch('/api/v1/batches', { headers });
-                if (batchesRes.ok) {
-                    const batchesData = await batchesRes.json();
-                    setBatches(batchesData.data);
-                }
-            } catch (e: any) {
-                setError(e.message);
+            const batchesRes = await fetch('/api/v1/batches', { headers });
+            if (batchesRes.ok) {
+                const batchesData = await batchesRes.json();
+                setBatches(batchesData.data);
             }
-        };
+        } catch (e: any) {
+            setError(e.message);
+        }
+    };
 
+    useEffect(() => {
         fetchData();
+
+        // 如果有未完成的批次，每5秒自动刷新
+        const interval = setInterval(() => {
+            fetchData();
+        }, 5000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const avg = metrics ? (metrics.num_documents / metrics.num_batches || 0).toFixed(1) : 0;
@@ -138,10 +150,10 @@ const DashboardPage = () => {
                                                 padding: '4px 8px',
                                                 borderRadius: '4px',
                                                 fontSize: '12px',
-                                                background: batch.status === 'completed' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(99, 102, 241, 0.2)',
-                                                color: batch.status === 'completed' ? '#34d399' : '#818cf8'
+                                                background: (statusMap[batch.status] || statusMap.queued).bg,
+                                                color: (statusMap[batch.status] || statusMap.queued).color,
                                             }}>
-                                                {batch.status}
+                                                {(statusMap[batch.status] || { label: batch.status }).label}
                                             </span>
                                         </td>
                                         <td style={{ padding: '16px' }}>

@@ -30,6 +30,7 @@ async def list_libraries(
                 "description": lib.description,
                 "owner_id": str(lib.owner_id),
                 "is_active": lib.is_active,
+                "status": "active" if lib.is_active else "inactive",
                 "document_count": lib.document_count or 0,
                 "created_at": lib.created_at,
             }
